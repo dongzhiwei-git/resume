@@ -5,7 +5,7 @@
 
     <div class="no-print" style="text-align: center; margin-top: 2rem;">
         <input type="hidden" name="avatar_existing" value="{{ .Resume.Avatar }}">
-        <button onclick="window.print()" data-i18n="preview_btn"
+        <button onclick="onPrint()" data-i18n="preview_btn"
             style="background: #007bff; color: white; border: none; padding: 1rem 2rem; border-radius: 5px; cursor: pointer; font-size: 1.1rem; margin-right: 1rem;">保存为
             PDF / 打印</button>
         <button onclick="exportJson()"
@@ -17,6 +17,11 @@
 </div>
 
 <script>
+    async function onPrint() {
+        try { await fetch('/metrics/generate', { method: 'POST' }); } catch (e) { }
+        window.print();
+    }
+
     function exportJson() {
         const el = document.getElementById('resume-data');
         const resumeData = JSON.parse(el.textContent || '{}');

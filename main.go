@@ -5,6 +5,7 @@ import (
 	"html/template"
 	"log"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/dongzhiwei-git/resume/handlers"
@@ -30,6 +31,15 @@ func main() {
 			tmpl := template.Must(template.ParseFS(templatesFS, "templates/*.html"))
 			router.SetHTMLTemplate(tmpl)
 
+			router.Use(func(c *gin.Context) {
+				if c.Request.Method == "GET" {
+					p := c.Request.URL.Path
+					if !strings.HasPrefix(p, "/static") && p != "/robots.txt" && p != "/sitemap.xml" && p != "/favicon.ico" {
+						metrics.IncVisit()
+					}
+				}
+			})
+
 			router.GET("/", handlers.Home)
 			router.GET("/editor", handlers.Editor)
 			router.POST("/preview", handlers.Preview)
@@ -37,6 +47,7 @@ func main() {
 			router.POST("/import", handlers.Import)
 			router.GET("/robots.txt", handlers.Robots)
 			router.GET("/sitemap.xml", handlers.Sitemap)
+			router.POST("/metrics/generate", handlers.GenerateEvent)
 
 			port := os.Getenv("PORT")
 			if port == "" {

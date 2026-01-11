@@ -18,7 +18,6 @@ import (
 )
 
 func Home(c *gin.Context) {
-	metrics.IncVisit()
 	v, g := metrics.Snapshot()
 	scheme := c.Request.Header.Get("X-Forwarded-Proto")
 	if scheme == "" {
@@ -35,7 +34,6 @@ func Home(c *gin.Context) {
 }
 
 func Editor(c *gin.Context) {
-	metrics.IncVisit()
 	selectedTemplate := c.Query("template")
 
 	var initialResume models.Resume
@@ -64,7 +62,6 @@ func Editor(c *gin.Context) {
 }
 
 func Preview(c *gin.Context) {
-	metrics.IncGenerate()
 	if err := c.Request.ParseMultipartForm(32 << 20); err != nil {
 		c.String(http.StatusBadRequest, "Invalid form")
 		return
@@ -101,7 +98,6 @@ func Preview(c *gin.Context) {
 }
 
 func ApiPreview(c *gin.Context) {
-	metrics.IncGenerate()
 	if _, err := c.MultipartForm(); err != nil {
 		c.String(http.StatusBadRequest, "Invalid form")
 		return
@@ -120,6 +116,11 @@ func ApiPreview(c *gin.Context) {
 	c.HTML(http.StatusOK, "resume_content.html", gin.H{
 		"Resume": resume,
 	})
+}
+
+func GenerateEvent(c *gin.Context) {
+	metrics.IncGenerate()
+	c.JSON(http.StatusOK, gin.H{"ok": true})
 }
 
 func Robots(c *gin.Context) {
