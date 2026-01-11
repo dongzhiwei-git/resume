@@ -6,9 +6,9 @@ Language: 中文 | [English](README.en.md)
 
 一个基于 Go + Gin + 原生 HTML/CSS 的简历生成器，支持中文界面、实时预览、模板样式、主题颜色、字体大小与文档尺寸等配置，并可打印/导出为 PDF。
 
-在线预览：`https://ricardo-resume.zeabur.app/`
+在线预览：[https://ricardo-resume.zeabur.app/](https://ricardo-resume.zeabur.app/)
 
-GitHub 仓库：`https://github.com/dongzhiwei-git/resume`
+GitHub 仓库：[https://github.com/dongzhiwei-git/resume](https://github.com/dongzhiwei-git/resume)
 
 ## 功能特性
 - 实时预览：编辑器左侧输入，右侧即时渲染
