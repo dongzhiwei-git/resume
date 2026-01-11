@@ -50,7 +50,10 @@ func Editor(c *gin.Context) {
 
 func Preview(c *gin.Context) {
 	metrics.IncGenerate()
-	c.Request.ParseMultipartForm(32 << 20)
+	if err := c.Request.ParseMultipartForm(32 << 20); err != nil {
+		c.String(http.StatusBadRequest, "Invalid form")
+		return
+	}
 	resume := parseResumeFromForm(c)
 
 	if resume.Config.Color == "" {
@@ -77,7 +80,10 @@ func Preview(c *gin.Context) {
 }
 
 func ApiPreview(c *gin.Context) {
-	c.MultipartForm() // Ensure form is parsed
+	if _, err := c.MultipartForm(); err != nil {
+		c.String(http.StatusBadRequest, "Invalid form")
+		return
+	}
 
 	resume := parseResumeFromForm(c)
 	fmt.Printf("Received Resume: %+v\n", resume)
