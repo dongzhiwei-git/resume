@@ -1,8 +1,9 @@
 package main
 
 import (
-	"github.com/dongzhiwei-git/resume/handlers"
+	"os"
 
+	"github.com/dongzhiwei-git/resume/handlers"
 	"github.com/gin-gonic/gin"
 )
 
@@ -18,5 +19,9 @@ func main() {
 	r.POST("/api/preview", handlers.ApiPreview)
 	r.POST("/import", handlers.Import)
 
-	r.Run(":8080")
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+	r.Run(":" + port)
 }

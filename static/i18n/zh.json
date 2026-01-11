@@ -46,4 +46,6 @@
  , "card_minimal_title": "极简模板"
  , "card_minimal_desc": "极致简单，去除多余装饰，注重内容本身。"
  , "card_minimal_cta": "使用极简模板"
+ , "visits_label": "访问"
+ , "generates_label": "生成"
 }

@@ -46,4 +46,6 @@
  , "card_minimal_title": "Minimal Template"
  , "card_minimal_desc": "Extremely simple—focus on content with minimal decoration."
  , "card_minimal_cta": "Use Minimal Template"
+ , "visits_label": "Visits"
+ , "generates_label": "Generates"
 }

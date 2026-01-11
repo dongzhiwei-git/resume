@@ -9,15 +9,20 @@ import (
 	"strconv"
 
 	"github.com/dongzhiwei-git/resume/config"
+	"github.com/dongzhiwei-git/resume/metrics"
 	"github.com/dongzhiwei-git/resume/models"
 
 	"github.com/gin-gonic/gin"
 )
 
 func Home(c *gin.Context) {
+	metrics.IncVisit()
+	v, g := metrics.Snapshot()
 	c.HTML(http.StatusOK, "index.html", gin.H{
 		"title":        "简单简历 - 在线简历制作",
 		"ServerConfig": config.AppConfig,
+		"Visits":       v,
+		"Generates":    g,
 	})
 }
 
@@ -34,14 +39,18 @@ func Editor(c *gin.Context) {
 		initialResume.Config.Template = "" // Default
 	}
 
+	v, g := metrics.Snapshot()
 	c.HTML(http.StatusOK, "editor.html", gin.H{
-		"title":  "编辑简历",
-		"Resume": initialResume,
+		"title":     "编辑简历",
+		"Resume":    initialResume,
+		"Visits":    v,
+		"Generates": g,
 	})
 }
 
 func Preview(c *gin.Context) {
-	c.Request.ParseMultipartForm(32 << 20) // Parse form data
+	metrics.IncGenerate()
+	c.Request.ParseMultipartForm(32 << 20)
 	resume := parseResumeFromForm(c)
 
 	if resume.Config.Color == "" {
@@ -51,6 +60,7 @@ func Preview(c *gin.Context) {
 		resume.Config.Template = "classic"
 	}
 
+	v, g := metrics.Snapshot()
 	c.HTML(http.StatusOK, "view.html", gin.H{
 		"title":  "简历预览",
 		"Resume": resume,
@@ -61,6 +71,8 @@ func Preview(c *gin.Context) {
 			}
 			return string(b)
 		}(),
+		"Visits":    v,
+		"Generates": g,
 	})
 }
 
