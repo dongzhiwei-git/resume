@@ -4,6 +4,10 @@ Author: ricardo
 
 A resume builder powered by Go + Gin and plain HTML/CSS. It provides a Chinese UI by default and now includes an English README. Features include real‑time preview, multiple experience/education entries, theme templates, color/font size/paper size configuration, and PDF printing/export.
 
+Live Demo: `https://ricardo-resume.zeabur.app/`
+
+GitHub Repo: `https://github.com/dongzhiwei-git/resume`
+
 ## Features
 - Real‑time preview (split view: editor on the left, preview on the right)
 - Multiple entries: add/remove work experiences and education records
