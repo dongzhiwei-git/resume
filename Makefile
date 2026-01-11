@@ -10,7 +10,7 @@ build:
 	go build -o bin/resume main.go
 
 run:
-	GIN_MODE=release PORT=$(PORT) go run main.go
+	GOPROXY=https://goproxy.cn,direct GIN_MODE=release PORT=$(PORT) go run main.go
 
 docker-build:
 	docker build -t simple-resume .
