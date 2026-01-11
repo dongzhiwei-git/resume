@@ -3,7 +3,8 @@ PORT ?= 8080
 .PHONY: lint build run docker-build docker-run
 
 lint:
-	golangci-lint run --timeout=5m
+	GOPROXY=https://goproxy.cn,direct go mod download
+	GOPROXY=https://goproxy.cn,direct golangci-lint run --timeout=5m --allow-parallel-runners
 
 build:
 	go build -o bin/resume main.go
