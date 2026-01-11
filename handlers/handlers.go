@@ -7,6 +7,8 @@ import (
 	"regexp"
 	"sort"
 	"strconv"
+	"strings"
+	"time"
 
 	"github.com/dongzhiwei-git/resume/config"
 	"github.com/dongzhiwei-git/resume/metrics"
@@ -18,11 +20,17 @@ import (
 func Home(c *gin.Context) {
 	metrics.IncVisit()
 	v, g := metrics.Snapshot()
+	scheme := c.Request.Header.Get("X-Forwarded-Proto")
+	if scheme == "" {
+		scheme = "http"
+	}
+	canonical := scheme + "://" + c.Request.Host + c.Request.URL.Path
 	c.HTML(http.StatusOK, "index.html", gin.H{
 		"title":        "简单简历 - 在线简历制作",
 		"ServerConfig": config.AppConfig,
 		"Visits":       v,
 		"Generates":    g,
+		"Canonical":    canonical,
 	})
 }
 
@@ -40,11 +48,17 @@ func Editor(c *gin.Context) {
 	}
 
 	v, g := metrics.Snapshot()
+	scheme := c.Request.Header.Get("X-Forwarded-Proto")
+	if scheme == "" {
+		scheme = "http"
+	}
+	canonical := scheme + "://" + c.Request.Host + c.Request.URL.Path
 	c.HTML(http.StatusOK, "editor.html", gin.H{
 		"title":     "编辑简历",
 		"Resume":    initialResume,
 		"Visits":    v,
 		"Generates": g,
+		"Canonical": canonical,
 	})
 }
 
@@ -64,6 +78,11 @@ func Preview(c *gin.Context) {
 	}
 
 	v, g := metrics.Snapshot()
+	scheme := c.Request.Header.Get("X-Forwarded-Proto")
+	if scheme == "" {
+		scheme = "http"
+	}
+	canonical := scheme + "://" + c.Request.Host + "/view"
 	c.HTML(http.StatusOK, "view.html", gin.H{
 		"title":  "简历预览",
 		"Resume": resume,
@@ -76,6 +95,7 @@ func Preview(c *gin.Context) {
 		}(),
 		"Visits":    v,
 		"Generates": g,
+		"Canonical": canonical,
 	})
 }
 
@@ -98,6 +118,40 @@ func ApiPreview(c *gin.Context) {
 	c.HTML(http.StatusOK, "resume_content.html", gin.H{
 		"Resume": resume,
 	})
+}
+
+func Robots(c *gin.Context) {
+	c.Header("Content-Type", "text/plain; charset=utf-8")
+	scheme := c.Request.Header.Get("X-Forwarded-Proto")
+	if scheme == "" {
+		scheme = "http"
+	}
+	host := c.Request.Host
+	body := "User-agent: *\nAllow: /\nSitemap: " + scheme + "://" + host + "/sitemap.xml\n"
+	c.String(http.StatusOK, body)
+}
+
+func Sitemap(c *gin.Context) {
+	c.Header("Content-Type", "application/xml; charset=utf-8")
+	scheme := c.Request.Header.Get("X-Forwarded-Proto")
+	if scheme == "" {
+		scheme = "http"
+	}
+	host := c.Request.Host
+	today := time.Now().Format("2006-01-02")
+	b := strings.Builder{}
+	b.WriteString("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
+	b.WriteString("<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\">\n")
+	for _, p := range []string{"/", "/editor"} {
+		b.WriteString("  <url>\n")
+		b.WriteString("    <loc>" + scheme + "://" + host + p + "</loc>\n")
+		b.WriteString("    <lastmod>" + today + "</lastmod>\n")
+		b.WriteString("    <changefreq>weekly</changefreq>\n")
+		b.WriteString("    <priority>0.8</priority>\n")
+		b.WriteString("  </url>\n")
+	}
+	b.WriteString("</urlset>")
+	c.String(http.StatusOK, b.String())
 }
 
 func Import(c *gin.Context) {

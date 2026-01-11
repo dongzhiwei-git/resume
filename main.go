@@ -34,6 +34,8 @@ func main() {
 			router.POST("/preview", handlers.Preview)
 			router.POST("/api/preview", handlers.ApiPreview)
 			router.POST("/import", handlers.Import)
+			router.GET("/robots.txt", handlers.Robots)
+			router.GET("/sitemap.xml", handlers.Sitemap)
 
 			port := os.Getenv("PORT")
 			if port == "" {
