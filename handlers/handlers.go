@@ -35,6 +35,7 @@ func Home(c *gin.Context) {
 }
 
 func Editor(c *gin.Context) {
+	metrics.IncVisit()
 	selectedTemplate := c.Query("template")
 
 	var initialResume models.Resume
@@ -100,6 +101,7 @@ func Preview(c *gin.Context) {
 }
 
 func ApiPreview(c *gin.Context) {
+	metrics.IncGenerate()
 	if _, err := c.MultipartForm(); err != nil {
 		c.String(http.StatusBadRequest, "Invalid form")
 		return
