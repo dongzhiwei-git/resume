@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/dongzhiwei-git/resume/handlers"
+	"github.com/dongzhiwei-git/resume/metrics"
 	"github.com/gin-gonic/gin"
 )
 
@@ -40,6 +41,19 @@ func main() {
 			port := os.Getenv("PORT")
 			if port == "" {
 				port = "8080"
+			}
+			dsn := os.Getenv("MYSQL_DSN")
+			if dsn != "" {
+				for i := 0; i < 30; i++ {
+					if db, err := metrics.SetupDB(dsn); err == nil && db != nil {
+						metrics.Init(db)
+						log.Printf("metrics persistence enabled")
+						break
+					} else if err != nil {
+						log.Printf("metrics db setup retry %d: %v", i+1, err)
+						time.Sleep(2 * time.Second)
+					}
+				}
 			}
 			if err := router.Run(":" + port); err != nil {
 				log.Printf("server error: %v", err)

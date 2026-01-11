@@ -38,6 +38,15 @@ GitHub 仓库：[https://github.com/dongzhiwei-git/resume](https://github.com/do
   - 打开浏览器访问 `http://localhost:8080`
   - 进入编辑器 `http://localhost:8080/editor`
 
+### 启用 MySQL 持久化访问/生成计数
+- 设置环境变量 `MYSQL_DSN`（例如：`root:password@tcp(localhost:3306)/resume?parseTime=true&charset=utf8mb4`）
+- 服务启动后会自动建表 `metrics_counters` 并写入ID=1的计数行
+- 每次访问首页会 `visits+1`，每次生成预览会 `generates+1`
+
+使用 Docker Compose：
+- `docker compose up -d --build`
+- 默认连接到 `mysql` 服务，DSN 已在 `docker-compose.yml` 中设置
+
 ## 使用说明
 - 左侧表单填写个人信息、工作经历、教育背景，可通过“添加经历/添加教育”动态增加条目，右侧预览会自动更新
 - 点击“生成完整预览 / 打印”进入全屏预览页，使用浏览器的打印对话框保存为 PDF
