@@ -27,10 +27,6 @@ func main() {
 			}()
 
 			router := gin.Default()
-			router.Static("/static", "./static")
-			tmpl := template.Must(template.ParseFS(templatesFS, "templates/*.html"))
-			router.SetHTMLTemplate(tmpl)
-
 			router.Use(func(c *gin.Context) {
 				if c.Request.Method == "GET" {
 					p := c.Request.URL.Path
@@ -39,6 +35,9 @@ func main() {
 					}
 				}
 			})
+			router.Static("/static", "./static")
+			tmpl := template.Must(template.ParseFS(templatesFS, "templates/*.html"))
+			router.SetHTMLTemplate(tmpl)
 
 			router.GET("/", handlers.Home)
 			router.GET("/editor", handlers.Editor)
