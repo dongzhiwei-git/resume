@@ -1,9 +1,10 @@
 {{ template "header.html" . }}
-<div class="container-fluid" style="padding: 0; display: flex; height: calc(100vh - 60px);">
+<div class="container-fluid split-layout" style="padding: 0; display: flex; height: calc(100vh - 60px);">
 
     <!-- Left: Editor (Scrollable) -->
     <div class="editor-pane"
         style="flex: 1; padding: 2rem; overflow-y: auto; background: #f8f9fa; border-right: 1px solid #ddd; max-width: 50%;">
+        <button id="mobile-preview-toggle" class="mobile-toggle" data-i18n="toggle_preview">切换预览</button>
         <form id="resumeForm" action="/preview" method="POST" enctype="multipart/form-data" target="_blank"
             style="background: #fff; padding: 2rem; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
             <h2 style="margin-bottom: 2rem; margin-top: 0;" data-i18n="editor_title">编辑简历</h2>
@@ -68,7 +69,7 @@
                     <input type="file" name="avatar" accept="image/*">
                     <input type="hidden" name="avatar_existing">
                 </div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div class="grid-two" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                     <input type="text" name="name" placeholder="姓名" data-i18n-placeholder="name_ph" required
                         style="width: 100%;" value="{{ .Resume.Name }}">
                     <input type="email" name="email" placeholder="邮箱" data-i18n-placeholder="email_ph" required
@@ -95,10 +96,11 @@
                     {{ range $index, $exp := .Resume.Experience }}
                     <div class="list-item"
                         style="background: #f9f9f9; padding: 1rem; margin-bottom: 1rem; border-radius: 4px; position: relative;">
-                        <button type="button" onclick="removeItem(this)"
+                        <button type="button" onclick="removeItem(this)" class="remove-btn"
                             style="position: absolute; right: 10px; top: 10px; background: #dc3545; color: white; border: none; padding: 2px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;"
                             data-i18n="remove_btn">删除</button>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-right: 40px;">
+                        <div class="grid-two"
+                            style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-right: 40px;">
                             <input type="text" name="experience[{{ $index }}].title" placeholder="职位名称"
                                 data-i18n-placeholder="exp_title_ph" value="{{ $exp.Title }}">
                             <input type="text" name="experience[{{ $index }}].company" placeholder="公司名称"
@@ -116,10 +118,11 @@
                     <!-- Initial Item -->
                     <div class="list-item"
                         style="background: #f9f9f9; padding: 1rem; margin-bottom: 1rem; border-radius: 4px; position: relative;">
-                        <button type="button" onclick="removeItem(this)"
+                        <button type="button" onclick="removeItem(this)" class="remove-btn"
                             style="position: absolute; right: 10px; top: 10px; background: #dc3545; color: white; border: none; padding: 2px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;"
                             data-i18n="remove_btn">删除</button>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-right: 40px;">
+                        <div class="grid-two"
+                            style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-right: 40px;">
                             <input type="text" name="experience[0].title" placeholder="职位名称"
                                 data-i18n-placeholder="exp_title_ph">
                             <input type="text" name="experience[0].company" placeholder="公司名称"
@@ -150,9 +153,10 @@
                     {{ range $index, $edu := .Resume.Education }}
                     <div class="list-item"
                         style="background: #f9f9f9; padding: 1rem; margin-bottom: 1rem; border-radius: 4px; position: relative;">
-                        <button type="button" onclick="removeItem(this)"
+                        <button type="button" onclick="removeItem(this)" class="remove-btn"
                             style="position: absolute; right: 10px; top: 10px; background: #dc3545; color: white; border: none; padding: 2px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">删除</button>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-right: 40px;">
+                        <div class="grid-two"
+                            style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-right: 40px;">
                             <input type="text" name="education[{{ $index }}].degree" placeholder="学位 / 专业"
                                 data-i18n-placeholder="edu_degree_ph" value="{{ $edu.Degree }}">
                             <input type="text" name="education[{{ $index }}].school" placeholder="学校名称"
@@ -167,9 +171,10 @@
                     <!-- Initial Item -->
                     <div class="list-item"
                         style="background: #f9f9f9; padding: 1rem; margin-bottom: 1rem; border-radius: 4px; position: relative;">
-                        <button type="button" onclick="removeItem(this)"
+                        <button type="button" onclick="removeItem(this)" class="remove-btn"
                             style="position: absolute; right: 10px; top: 10px; background: #dc3545; color: white; border: none; padding: 2px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">删除</button>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-right: 40px;">
+                        <div class="grid-two"
+                            style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-right: 40px;">
                             <input type="text" name="education[0].degree" placeholder="学位 / 专业"
                                 data-i18n-placeholder="edu_degree_ph">
                             <input type="text" name="education[0].school" placeholder="学校名称"
@@ -233,6 +238,8 @@
     document.addEventListener('DOMContentLoaded', function () {
         const form = document.getElementById('resumeForm');
         const previewContainer = document.getElementById('preview-container');
+        const previewPane = document.querySelector('.preview-pane');
+        const mobileToggle = document.getElementById('mobile-preview-toggle');
         let timeoutId;
 
         // --- Dynamic Fields Logic ---
@@ -341,6 +348,15 @@
                 updatePreview();
             }
         });
+
+        if (mobileToggle && previewPane) {
+            if (window.innerWidth <= 768) {
+                previewPane.classList.add('collapsed');
+            }
+            mobileToggle.addEventListener('click', function () {
+                previewPane.classList.toggle('collapsed');
+            });
+        }
 
         // Initial preview
         updatePreview();
