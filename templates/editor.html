@@ -1,0 +1,333 @@
+{{ template "header.html" . }}
+<div class="container-fluid" style="padding: 0; display: flex; height: calc(100vh - 60px);">
+
+    <!-- Left: Editor (Scrollable) -->
+    <div class="editor-pane"
+        style="flex: 1; padding: 2rem; overflow-y: auto; background: #f8f9fa; border-right: 1px solid #ddd; max-width: 50%;">
+        <form id="resumeForm" action="/preview" method="POST" enctype="multipart/form-data" target="_blank"
+            style="background: #fff; padding: 2rem; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+            <h2 style="margin-bottom: 2rem; margin-top: 0;">编辑简历</h2>
+
+            <!-- Theme Configuration -->
+            <div
+                style="background: #f0f7ff; padding: 1rem; border-radius: 8px; margin-bottom: 2rem; border: 1px solid #cce5ff;">
+                <h3 style="margin-top: 0; color: #004085;">简历样式配置</h3>
+
+                <div style="margin-bottom: 1rem;">
+                    <label style="font-weight: bold; display: block; margin-bottom: 0.5rem;">模板风格</label>
+                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                        <label class="radio-btn"><input type="radio" name="config.template" value="classic" {{ if or (eq
+                                .Resume.Config.Template "classic" ) (eq .Resume.Config.Template "" ) }}checked{{ end }}>
+                            经典模板</label>
+                        <label class="radio-btn"><input type="radio" name="config.template" value="modern" {{ if eq
+                                .Resume.Config.Template "modern" }}checked{{ end }}>
+                            现代模板</label>
+                        <label class="radio-btn"><input type="radio" name="config.template" value="minimal" {{ if eq
+                                .Resume.Config.Template "minimal" }}checked{{ end }}>
+                            极简模板</label>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 1rem;">
+                    <label style="font-weight: bold; display: block; margin-bottom: 0.5rem;">主题颜色</label>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <input type="color" name="config.color" value="#333333" style="height: 40px; width: 60px;">
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 2rem;">
+                    <div style="flex: 1;">
+                        <label style="font-weight: bold; display: block; margin-bottom: 0.5rem;">字体大小</label>
+                        <select name="config.font_size"
+                            style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ddd;">
+                            <option value="small">紧凑</option>
+                            <option value="medium" selected>标准</option>
+                            <option value="large">大号</option>
+                        </select>
+                    </div>
+                    <div style="flex: 1;">
+                        <label style="font-weight: bold; display: block; margin-bottom: 0.5rem;">文档大小</label>
+                        <select name="config.paper_size"
+                            style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ddd;">
+                            <option value="a4" selected>A4</option>
+                            <option value="letter">Letter</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Personal Info -->
+            <section style="margin-bottom: 2rem;">
+                <h3 style="border-bottom: 2px solid #eee; padding-bottom: 0.5rem;">个人信息</h3>
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem;">照片上传</label>
+                    <input type="file" name="avatar" accept="image/*">
+                    <input type="hidden" name="avatar_existing">
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <input type="text" name="name" placeholder="姓名" required style="width: 100%;"
+                        value="{{ .Resume.Name }}">
+                    <input type="email" name="email" placeholder="邮箱" required style="width: 100%;"
+                        value="{{ .Resume.Email }}">
+                    <input type="text" name="phone" placeholder="电话" style="width: 100%;" value="{{ .Resume.Phone }}">
+                </div>
+                <textarea name="summary" placeholder="个人简介 / 职业概述" rows="4"
+                    style="width: 100%; margin-top: 1rem;">{{ .Resume.Summary }}</textarea>
+            </section>
+
+            <!-- Experience -->
+            <section style="margin-bottom: 2rem;">
+                <div
+                    style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 0.5rem; margin-bottom: 1rem;">
+                    <h3 style="margin: 0;">工作经历</h3>
+                    <button type="button" onclick="addItem('experience')"
+                        style="background: #007bff; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">+
+                        添加经历</button>
+                </div>
+
+                <div id="experience-list">
+                    {{ if .Resume.Experience }}
+                    {{ range $index, $exp := .Resume.Experience }}
+                    <div class="list-item"
+                        style="background: #f9f9f9; padding: 1rem; margin-bottom: 1rem; border-radius: 4px; position: relative;">
+                        <button type="button" onclick="removeItem(this)"
+                            style="position: absolute; right: 10px; top: 10px; background: #dc3545; color: white; border: none; padding: 2px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">删除</button>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-right: 40px;">
+                            <input type="text" name="experience[{{ $index }}].title" placeholder="职位名称"
+                                value="{{ $exp.Title }}">
+                            <input type="text" name="experience[{{ $index }}].company" placeholder="公司名称"
+                                value="{{ $exp.Company }}">
+                        </div>
+                        <input type="text" name="experience[{{ $index }}].date" placeholder="时间段 (例如: 2020 - 至今)"
+                            style="width: 100%; margin-top: 0.5rem;" value="{{ $exp.Date }}">
+                        <textarea name="experience[{{ $index }}].description" placeholder="工作内容描述" rows="3"
+                            style="width: 100%; margin-top: 0.5rem;">{{ $exp.Description }}</textarea>
+                    </div>
+                    {{ end }}
+                    {{ else }}
+                    <!-- Initial Item -->
+                    <div class="list-item"
+                        style="background: #f9f9f9; padding: 1rem; margin-bottom: 1rem; border-radius: 4px; position: relative;">
+                        <button type="button" onclick="removeItem(this)"
+                            style="position: absolute; right: 10px; top: 10px; background: #dc3545; color: white; border: none; padding: 2px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">删除</button>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-right: 40px;">
+                            <input type="text" name="experience[0].title" placeholder="职位名称">
+                            <input type="text" name="experience[0].company" placeholder="公司名称">
+                        </div>
+                        <input type="text" name="experience[0].date" placeholder="时间段 (例如: 2020 - 至今)"
+                            style="width: 100%; margin-top: 0.5rem;">
+                        <textarea name="experience[0].description" placeholder="工作内容描述" rows="3"
+                            style="width: 100%; margin-top: 0.5rem;"></textarea>
+                    </div>
+                    {{ end }}
+                </div>
+            </section>
+
+            <!-- Education -->
+            <section style="margin-bottom: 2rem;">
+                <div
+                    style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 0.5rem; margin-bottom: 1rem;">
+                    <h3 style="margin: 0;">教育背景</h3>
+                    <button type="button" onclick="addItem('education')"
+                        style="background: #007bff; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">+
+                        添加教育</button>
+                </div>
+
+                <div id="education-list">
+                    {{ if .Resume.Education }}
+                    {{ range $index, $edu := .Resume.Education }}
+                    <div class="list-item"
+                        style="background: #f9f9f9; padding: 1rem; margin-bottom: 1rem; border-radius: 4px; position: relative;">
+                        <button type="button" onclick="removeItem(this)"
+                            style="position: absolute; right: 10px; top: 10px; background: #dc3545; color: white; border: none; padding: 2px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">删除</button>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-right: 40px;">
+                            <input type="text" name="education[{{ $index }}].degree" placeholder="学位 / 专业"
+                                value="{{ $edu.Degree }}">
+                            <input type="text" name="education[{{ $index }}].school" placeholder="学校名称"
+                                value="{{ $edu.School }}">
+                        </div>
+                        <input type="text" name="education[{{ $index }}].date" placeholder="毕业年份"
+                            style="width: 100%; margin-top: 0.5rem;" value="{{ $edu.Date }}">
+                    </div>
+                    {{ end }}
+                    {{ else }}
+                    <!-- Initial Item -->
+                    <div class="list-item"
+                        style="background: #f9f9f9; padding: 1rem; margin-bottom: 1rem; border-radius: 4px; position: relative;">
+                        <button type="button" onclick="removeItem(this)"
+                            style="position: absolute; right: 10px; top: 10px; background: #dc3545; color: white; border: none; padding: 2px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">删除</button>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-right: 40px;">
+                            <input type="text" name="education[0].degree" placeholder="学位 / 专业">
+                            <input type="text" name="education[0].school" placeholder="学校名称">
+                        </div>
+                        <input type="text" name="education[0].date" placeholder="毕业年份"
+                            style="width: 100%; margin-top: 0.5rem;">
+                    </div>
+                    {{ end }}
+                </div>
+            </section>
+
+            <button type="submit"
+                style="background: #28a745; color: white; border: none; padding: 1rem 2rem; font-size: 1.2rem; border-radius: 5px; cursor: pointer; width: 100%;">生成完整预览
+                / 打印</button>
+        </form>
+    </div>
+
+    <!-- Right: Live Preview (Scrollable) -->
+    <div class="preview-pane"
+        style="flex: 1; padding: 2rem; background: #525659; overflow-y: auto; display: flex; justify-content: center;">
+        <div id="preview-container"
+            style="background: white; box-shadow: 0 0 20px rgba(0,0,0,0.3); min-height: 800px; width: 100%; max-width: 800px; transform-origin: top center;">
+            <div style="padding: 2rem; text-align: center; color: #666; margin-top: 3rem;">
+                正在加载预览...
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .radio-btn {
+        background: white;
+        border: 1px solid #ddd;
+        padding: 5px 10px;
+        border-radius: 4px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .radio-btn:hover {
+        background: #f0f0f0;
+    }
+
+    /* Override container width for full screen layout */
+    .container {
+        max-width: 100% !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    /* Hide footer in editor mode as it takes up space */
+    footer {
+        display: none;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const form = document.getElementById('resumeForm');
+        const previewContainer = document.getElementById('preview-container');
+        let timeoutId;
+
+        // --- Dynamic Fields Logic ---
+
+        window.addItem = function (type) {
+            const container = document.getElementById(type + '-list');
+            const index = container.children.length;
+            const newItem = document.createElement('div');
+            newItem.className = 'list-item';
+            newItem.style.cssText = 'background: #f9f9f9; padding: 1rem; margin-bottom: 1rem; border-radius: 4px; position: relative;';
+
+            if (type === 'experience') {
+                newItem.innerHTML = `
+                <button type="button" onclick="removeItem(this)" style="position: absolute; right: 10px; top: 10px; background: #dc3545; color: white; border: none; padding: 2px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">删除</button>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-right: 40px;">
+                    <input type="text" name="experience[${index}].title" placeholder="职位名称">
+                    <input type="text" name="experience[${index}].company" placeholder="公司名称">
+                </div>
+                <input type="text" name="experience[${index}].date" placeholder="时间段 (例如: 2020 - 至今)" style="width: 100%; margin-top: 0.5rem;">
+                <textarea name="experience[${index}].description" placeholder="工作内容描述" rows="3" style="width: 100%; margin-top: 0.5rem;"></textarea>
+            `;
+            } else if (type === 'education') {
+                newItem.innerHTML = `
+                <button type="button" onclick="removeItem(this)" style="position: absolute; right: 10px; top: 10px; background: #dc3545; color: white; border: none; padding: 2px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">删除</button>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-right: 40px;">
+                    <input type="text" name="education[${index}].degree" placeholder="学位 / 专业">
+                    <input type="text" name="education[${index}].school" placeholder="学校名称">
+                </div>
+                <input type="text" name="education[${index}].date" placeholder="毕业年份" style="width: 100%; margin-top: 0.5rem;">
+            `;
+            }
+
+            container.appendChild(newItem);
+            reindex(type); // Ensure indexes are correct
+            updatePreview(); // Trigger preview update
+        };
+
+        window.removeItem = function (button) {
+            const item = button.closest('.list-item');
+            const container = item.parentNode;
+            // Check type based on container id
+            const type = container.id.replace('-list', '');
+
+            container.removeChild(item);
+            reindex(type);
+            updatePreview();
+        };
+
+        function reindex(type) {
+            const container = document.getElementById(type + '-list');
+            const items = container.querySelectorAll('.list-item');
+
+            items.forEach((item, index) => {
+                const inputs = item.querySelectorAll('input, textarea');
+                inputs.forEach(input => {
+                    const name = input.getAttribute('name');
+                    if (name) {
+                        // Replace the index in the name attribute, e.g., experience[0].title -> experience[1].title
+                        const newName = name.replace(/\[\d+\]/, `[${index}]`);
+                        input.setAttribute('name', newName);
+                    }
+                });
+            });
+        }
+
+        // --- Preview Logic ---
+
+        function updatePreview() {
+            // Reindex everything before sending just in case
+            reindex('experience');
+            reindex('education');
+
+            const formData = new FormData(form);
+
+            fetch('/api/preview', {
+                method: 'POST',
+                body: formData
+            })
+                .then(response => response.text())
+                .then(html => {
+                    previewContainer.innerHTML = html;
+                })
+                .catch(error => {
+                    console.error('Error updating preview:', error);
+                });
+        }
+
+        // Debounce function to limit request rate
+        function debounce(func, delay) {
+            return function () {
+                clearTimeout(timeoutId);
+                timeoutId = setTimeout(() => func.apply(this, arguments), delay);
+            };
+        }
+
+        const debouncedUpdate = debounce(updatePreview, 500);
+
+        // Listen for input changes using delegation for dynamic elements
+        form.addEventListener('input', function (e) {
+            debouncedUpdate();
+        });
+
+        form.addEventListener('change', function (e) {
+            // Update immediately for select/radio/checkbox
+            if (e.target.tagName === 'SELECT' || e.target.type === 'radio' || e.target.type === 'checkbox') {
+                updatePreview();
+            }
+        });
+
+        // Initial preview
+        updatePreview();
+    });
+</script>

@@ -1,0 +1,157 @@
+openapi: 3.0.3
+info:
+  title: 简单简历 API
+  version: 1.0.0
+  description: 简历编辑与预览接口（非商业许可，署名 ricardo）
+  license:
+    name: Non-Commercial License (Attribution: ricardo)
+servers:
+  - url: http://localhost:8080
+paths:
+  /api/preview:
+    post:
+      summary: 实时预览片段
+      description: 根据表单数据返回简历主体 HTML 片段，用于编辑器右侧实时预览
+      tags: [Preview]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ResumeForm'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ResumeForm'
+      responses:
+        '200':
+          description: HTML 片段
+          content:
+            text/html:
+              schema:
+                type: string
+  /preview:
+    post:
+      summary: 完整预览页面
+      description: 根据表单数据返回完整预览页（适合打印/导出 PDF）
+      tags: [Preview]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ResumeForm'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ResumeForm'
+      responses:
+        '200':
+          description: 完整 HTML 页面
+          content:
+            text/html:
+              schema:
+                type: string
+  /editor:
+    get:
+      summary: 编辑器页面
+      tags: [Pages]
+      responses:
+        '200':
+          description: HTML 页面
+          content:
+            text/html:
+              schema:
+                type: string
+  /:
+    get:
+      summary: 首页
+      tags: [Pages]
+      responses:
+        '200':
+          description: HTML 页面
+          content:
+            text/html:
+              schema:
+                type: string
+components:
+  schemas:
+    ResumeForm:
+      type: object
+      properties:
+        name:
+          type: string
+          description: 姓名
+        email:
+          type: string
+          description: 邮箱
+        phone:
+          type: string
+          description: 电话
+        summary:
+          type: string
+          description: 个人简介
+        config.template:
+          type: string
+          description: 模板风格（采用点号形式字段名）
+          enum: [classic, modern, minimal]
+        config.color:
+          type: string
+          description: 主题颜色（十六进制，例如 #38bdf8）
+          example: '#333333'
+        config.font_size:
+          type: string
+          description: 字体大小
+          enum: [small, medium, large]
+          example: medium
+        config.paper_size:
+          type: string
+          description: 文档尺寸
+          enum: [a4, letter]
+          example: a4
+        experience:
+          type: array
+          description: 工作经历（实际提交时使用 experience[0].title 这类索引点号形式）
+          items:
+            $ref: '#/components/schemas/Experience'
+        education:
+          type: array
+          description: 教育背景（实际提交时使用 education[0].school 这类索引点号形式）
+          items:
+            $ref: '#/components/schemas/Education'
+      example:
+        name: 张三
+        email: zhangsan@example.com
+        phone: '13800000000'
+        summary: 有 5 年后端开发经验，熟悉 Go/Gin。
+        config.template: modern
+        config.color: '#38bdf8'
+        config.font_size: medium
+        config.paper_size: a4
+        experience:
+          - title: 后端工程师
+            company: 某科技
+            date: 2022-至今
+            description: 负责简历生成服务开发与维护
+        education:
+          - degree: 计算机科学
+            school: XX大学
+            date: 2020
+    Experience:
+      type: object
+      properties:
+        title:
+          type: string
+        company:
+          type: string
+        date:
+          type: string
+        description:
+          type: string
+    Education:
+      type: object
+      properties:
+        degree:
+          type: string
+        school:
+          type: string
+        date:
+          type: string
