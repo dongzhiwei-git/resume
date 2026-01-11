@@ -14,6 +14,13 @@ func useDB() bool { return db != nil }
 
 func Init(d *sql.DB) {
 	db = d
+	var v, g int64
+	if err := db.QueryRow("SELECT visits, generates FROM metrics_counters WHERE id=1").Scan(&v, &g); err == nil {
+		atomic.StoreInt64(&visits, v)
+		atomic.StoreInt64(&generates, g)
+	} else {
+		log.Printf("metrics init load err: %v", err)
+	}
 }
 
 func IncVisit() {

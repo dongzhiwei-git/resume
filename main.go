@@ -44,15 +44,20 @@ func main() {
 			}
 			dsn := os.Getenv("MYSQL_DSN")
 			if dsn != "" {
-				for i := 0; i < 30; i++ {
+				ok := false
+				for i := 0; i < 60; i++ {
 					if db, err := metrics.SetupDB(dsn); err == nil && db != nil {
 						metrics.Init(db)
 						log.Printf("metrics persistence enabled")
+						ok = true
 						break
 					} else if err != nil {
 						log.Printf("metrics db setup retry %d: %v", i+1, err)
 						time.Sleep(2 * time.Second)
 					}
+				}
+				if !ok {
+					panic("database not ready")
 				}
 			}
 			if err := router.Run(":" + port); err != nil {
