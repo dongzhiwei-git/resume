@@ -64,7 +64,7 @@
             <section style="margin-bottom: 2rem;">
                 <h3 style="border-bottom: 2px solid #eee; padding-bottom: 0.5rem;" data-i18n="personal_info">个人信息</h3>
                 <div style="margin-bottom: 1rem;">
-                    <label style="display: block; margin-bottom: 0.5rem;">照片上传</label>
+                    <label style="display: block; margin-bottom: 0.5rem;" data-i18n="avatar_upload">照片上传</label>
                     <input type="file" name="avatar" accept="image/*">
                     <input type="hidden" name="avatar_existing">
                 </div>
@@ -96,7 +96,8 @@
                     <div class="list-item"
                         style="background: #f9f9f9; padding: 1rem; margin-bottom: 1rem; border-radius: 4px; position: relative;">
                         <button type="button" onclick="removeItem(this)"
-                            style="position: absolute; right: 10px; top: 10px; background: #dc3545; color: white; border: none; padding: 2px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">删除</button>
+                            style="position: absolute; right: 10px; top: 10px; background: #dc3545; color: white; border: none; padding: 2px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;"
+                            data-i18n="remove_btn">删除</button>
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-right: 40px;">
                             <input type="text" name="experience[{{ $index }}].title" placeholder="职位名称"
                                 data-i18n-placeholder="exp_title_ph" value="{{ $exp.Title }}">
@@ -116,7 +117,8 @@
                     <div class="list-item"
                         style="background: #f9f9f9; padding: 1rem; margin-bottom: 1rem; border-radius: 4px; position: relative;">
                         <button type="button" onclick="removeItem(this)"
-                            style="position: absolute; right: 10px; top: 10px; background: #dc3545; color: white; border: none; padding: 2px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">删除</button>
+                            style="position: absolute; right: 10px; top: 10px; background: #dc3545; color: white; border: none; padding: 2px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;"
+                            data-i18n="remove_btn">删除</button>
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-right: 40px;">
                             <input type="text" name="experience[0].title" placeholder="职位名称"
                                 data-i18n-placeholder="exp_title_ph">
@@ -192,7 +194,7 @@
         <div id="preview-container"
             style="background: white; box-shadow: 0 0 20px rgba(0,0,0,0.3); min-height: 800px; width: 100%; max-width: 800px; transform-origin: top center;">
             <div style="padding: 2rem; text-align: center; color: #666; margin-top: 3rem;">
-                正在加载预览...
+                <span data-i18n="loading_preview">正在加载预览...</span>
             </div>
         </div>
     </div>
