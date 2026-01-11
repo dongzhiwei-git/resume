@@ -3,7 +3,9 @@ package main
 import (
 	"embed"
 	"html/template"
+	"log"
 	"os"
+	"time"
 
 	"github.com/dongzhiwei-git/resume/handlers"
 	"github.com/gin-gonic/gin"
@@ -13,23 +15,34 @@ import (
 var templatesFS embed.FS
 
 func main() {
-	r := gin.Default()
+	for {
+		func() {
+			defer func() {
+				if r := recover(); r != nil {
+					log.Printf("recovered from panic: %v", r)
+					time.Sleep(2 * time.Second)
+				}
+			}()
 
-	r.Static("/static", "./static")
-	tmpl := template.Must(template.ParseFS(templatesFS, "templates/*.html"))
-	r.SetHTMLTemplate(tmpl)
+			router := gin.Default()
+			router.Static("/static", "./static")
+			tmpl := template.Must(template.ParseFS(templatesFS, "templates/*.html"))
+			router.SetHTMLTemplate(tmpl)
 
-	r.GET("/", handlers.Home)
-	r.GET("/editor", handlers.Editor)
-	r.POST("/preview", handlers.Preview)
-	r.POST("/api/preview", handlers.ApiPreview)
-	r.POST("/import", handlers.Import)
+			router.GET("/", handlers.Home)
+			router.GET("/editor", handlers.Editor)
+			router.POST("/preview", handlers.Preview)
+			router.POST("/api/preview", handlers.ApiPreview)
+			router.POST("/import", handlers.Import)
 
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
-	}
-	if err := r.Run(":" + port); err != nil {
-		panic(err)
+			port := os.Getenv("PORT")
+			if port == "" {
+				port = "8080"
+			}
+			if err := router.Run(":" + port); err != nil {
+				log.Printf("server error: %v", err)
+				time.Sleep(2 * time.Second)
+			}
+		}()
 	}
 }

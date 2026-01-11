@@ -349,6 +349,10 @@
             }
         });
 
+        const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+        if (isMobile) {
+            try { form.removeAttribute('target'); } catch (e) { }
+        }
         if (mobileToggle && previewPane) {
             if (window.innerWidth <= 768) {
                 previewPane.classList.add('collapsed');
