@@ -54,6 +54,13 @@ func Preview(c *gin.Context) {
 	c.HTML(http.StatusOK, "view.html", gin.H{
 		"title":  "简历预览",
 		"Resume": resume,
+		"ResumeJSON": func() string {
+			b, err := json.Marshal(resume)
+			if err != nil {
+				return "{}"
+			}
+			return string(b)
+		}(),
 	})
 }
 

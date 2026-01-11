@@ -13,23 +13,20 @@
             (JSON)</button>
         <div style="margin-top: 1rem; color: #666; font-size: 0.9rem;">(提示: 关闭此标签页以返回编辑)</div>
     </div>
+    <script type="application/json" id="resume-data">{{ .ResumeJSON }}</script>
 </div>
 
 <script>
     function exportJson() {
-        // We need to reconstruct the JSON object from the server-rendered template data
-        // Ideally we should pass the raw JSON object to the view, but here we can try to scrape or better yet:
-        // Let's rely on a server-side endpoint for download or embed the data.
-        // Embedding data is easier.
-        const resumeData = {{ .Resume }
-    };
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(resumeData, null, 2));
-    const downloadAnchorNode = document.createElement('a');
-    downloadAnchorNode.setAttribute("href", dataStr);
-    downloadAnchorNode.setAttribute("download", "resume_" + (resumeData.Name || "data") + ".json");
-    document.body.appendChild(downloadAnchorNode); // required for firefox
-    downloadAnchorNode.click();
-    downloadAnchorNode.remove();
+        const el = document.getElementById('resume-data');
+        const resumeData = JSON.parse(el.textContent || '{}');
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(resumeData, null, 2));
+        const downloadAnchorNode = document.createElement('a');
+        downloadAnchorNode.setAttribute("href", dataStr);
+        downloadAnchorNode.setAttribute("download", "resume_" + (resumeData.Name || "data") + ".json");
+        document.body.appendChild(downloadAnchorNode); // required for firefox
+        downloadAnchorNode.click();
+        downloadAnchorNode.remove();
     }
 </script>
 {{ template "footer.html" . }}
