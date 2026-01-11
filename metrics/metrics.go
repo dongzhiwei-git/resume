@@ -41,4 +41,12 @@ func IncGenerate() {
 	}
 }
 
-func Snapshot() (int64, int64) { return atomic.LoadInt64(&visits), atomic.LoadInt64(&generates) }
+func Snapshot() (int64, int64) {
+	if useDB() {
+		var v, g int64
+		if err := db.QueryRow("SELECT visits, generates FROM metrics_counters WHERE id=1").Scan(&v, &g); err == nil {
+			return v, g
+		}
+	}
+	return atomic.LoadInt64(&visits), atomic.LoadInt64(&generates)
+}
