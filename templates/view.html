@@ -5,7 +5,7 @@
 
     <div class="no-print" style="text-align: center; margin-top: 2rem;">
         <input type="hidden" name="avatar_existing" value="{{ .Resume.Avatar }}">
-        <button onclick="window.print()"
+        <button onclick="window.print()" data-i18n="preview_btn"
             style="background: #007bff; color: white; border: none; padding: 1rem 2rem; border-radius: 5px; cursor: pointer; font-size: 1.1rem; margin-right: 1rem;">保存为
             PDF / 打印</button>
         <button onclick="exportJson()"
@@ -21,7 +21,8 @@
         // Ideally we should pass the raw JSON object to the view, but here we can try to scrape or better yet:
         // Let's rely on a server-side endpoint for download or embed the data.
         // Embedding data is easier.
-        const resumeData = {{ .Resume }};
+        const resumeData = {{ .Resume }
+    };
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(resumeData, null, 2));
     const downloadAnchorNode = document.createElement('a');
     downloadAnchorNode.setAttribute("href", dataStr);

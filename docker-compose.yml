@@ -1,0 +1,11 @@
+version: "3.8"
+services:
+  simple-resume:
+    build: .
+    container_name: simple-resume
+    environment:
+      - GIN_MODE=release
+      - PORT=8080
+    ports:
+      - "8080:8080"
+    restart: unless-stopped

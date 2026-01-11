@@ -6,30 +6,32 @@
         style="flex: 1; padding: 2rem; overflow-y: auto; background: #f8f9fa; border-right: 1px solid #ddd; max-width: 50%;">
         <form id="resumeForm" action="/preview" method="POST" enctype="multipart/form-data" target="_blank"
             style="background: #fff; padding: 2rem; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-            <h2 style="margin-bottom: 2rem; margin-top: 0;">编辑简历</h2>
+            <h2 style="margin-bottom: 2rem; margin-top: 0;" data-i18n="editor_title">编辑简历</h2>
 
             <!-- Theme Configuration -->
             <div
                 style="background: #f0f7ff; padding: 1rem; border-radius: 8px; margin-bottom: 2rem; border: 1px solid #cce5ff;">
-                <h3 style="margin-top: 0; color: #004085;">简历样式配置</h3>
+                <h3 style="margin-top: 0; color: #004085;" data-i18n="config_title">简历样式配置</h3>
 
                 <div style="margin-bottom: 1rem;">
-                    <label style="font-weight: bold; display: block; margin-bottom: 0.5rem;">模板风格</label>
+                    <label style="font-weight: bold; display: block; margin-bottom: 0.5rem;"
+                        data-i18n="template_label">模板风格</label>
                     <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
                         <label class="radio-btn"><input type="radio" name="config.template" value="classic" {{ if or (eq
                                 .Resume.Config.Template "classic" ) (eq .Resume.Config.Template "" ) }}checked{{ end }}>
-                            经典模板</label>
+                            <span data-i18n="template_classic">经典模板</span></label>
                         <label class="radio-btn"><input type="radio" name="config.template" value="modern" {{ if eq
                                 .Resume.Config.Template "modern" }}checked{{ end }}>
-                            现代模板</label>
+                            <span data-i18n="template_modern">现代模板</span></label>
                         <label class="radio-btn"><input type="radio" name="config.template" value="minimal" {{ if eq
                                 .Resume.Config.Template "minimal" }}checked{{ end }}>
-                            极简模板</label>
+                            <span data-i18n="template_minimal">极简模板</span></label>
                     </div>
                 </div>
 
                 <div style="margin-bottom: 1rem;">
-                    <label style="font-weight: bold; display: block; margin-bottom: 0.5rem;">主题颜色</label>
+                    <label style="font-weight: bold; display: block; margin-bottom: 0.5rem;"
+                        data-i18n="color_label">主题颜色</label>
                     <div style="display: flex; gap: 0.5rem;">
                         <input type="color" name="config.color" value="#333333" style="height: 40px; width: 60px;">
                     </div>
@@ -37,7 +39,8 @@
 
                 <div style="display: flex; gap: 2rem;">
                     <div style="flex: 1;">
-                        <label style="font-weight: bold; display: block; margin-bottom: 0.5rem;">字体大小</label>
+                        <label style="font-weight: bold; display: block; margin-bottom: 0.5rem;"
+                            data-i18n="font_size_label">字体大小</label>
                         <select name="config.font_size"
                             style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ddd;">
                             <option value="small">紧凑</option>
@@ -46,7 +49,8 @@
                         </select>
                     </div>
                     <div style="flex: 1;">
-                        <label style="font-weight: bold; display: block; margin-bottom: 0.5rem;">文档大小</label>
+                        <label style="font-weight: bold; display: block; margin-bottom: 0.5rem;"
+                            data-i18n="paper_size_label">文档大小</label>
                         <select name="config.paper_size"
                             style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ddd;">
                             <option value="a4" selected>A4</option>
@@ -58,20 +62,21 @@
 
             <!-- Personal Info -->
             <section style="margin-bottom: 2rem;">
-                <h3 style="border-bottom: 2px solid #eee; padding-bottom: 0.5rem;">个人信息</h3>
+                <h3 style="border-bottom: 2px solid #eee; padding-bottom: 0.5rem;" data-i18n="personal_info">个人信息</h3>
                 <div style="margin-bottom: 1rem;">
                     <label style="display: block; margin-bottom: 0.5rem;">照片上传</label>
                     <input type="file" name="avatar" accept="image/*">
                     <input type="hidden" name="avatar_existing">
                 </div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                    <input type="text" name="name" placeholder="姓名" required style="width: 100%;"
-                        value="{{ .Resume.Name }}">
-                    <input type="email" name="email" placeholder="邮箱" required style="width: 100%;"
-                        value="{{ .Resume.Email }}">
-                    <input type="text" name="phone" placeholder="电话" style="width: 100%;" value="{{ .Resume.Phone }}">
+                    <input type="text" name="name" placeholder="姓名" data-i18n-placeholder="name_ph" required
+                        style="width: 100%;" value="{{ .Resume.Name }}">
+                    <input type="email" name="email" placeholder="邮箱" data-i18n-placeholder="email_ph" required
+                        style="width: 100%;" value="{{ .Resume.Email }}">
+                    <input type="text" name="phone" placeholder="电话" data-i18n-placeholder="phone_ph"
+                        style="width: 100%;" value="{{ .Resume.Phone }}">
                 </div>
-                <textarea name="summary" placeholder="个人简介 / 职业概述" rows="4"
+                <textarea name="summary" placeholder="个人简介 / 职业概述" data-i18n-placeholder="summary_ph" rows="4"
                     style="width: 100%; margin-top: 1rem;">{{ .Resume.Summary }}</textarea>
             </section>
 
@@ -79,10 +84,10 @@
             <section style="margin-bottom: 2rem;">
                 <div
                     style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 0.5rem; margin-bottom: 1rem;">
-                    <h3 style="margin: 0;">工作经历</h3>
+                    <h3 style="margin: 0;" data-i18n="experience">工作经历</h3>
                     <button type="button" onclick="addItem('experience')"
                         style="background: #007bff; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">+
-                        添加经历</button>
+                        <span data-i18n="add_experience">添加经历</span></button>
                 </div>
 
                 <div id="experience-list">
@@ -94,13 +99,15 @@
                             style="position: absolute; right: 10px; top: 10px; background: #dc3545; color: white; border: none; padding: 2px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">删除</button>
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-right: 40px;">
                             <input type="text" name="experience[{{ $index }}].title" placeholder="职位名称"
-                                value="{{ $exp.Title }}">
+                                data-i18n-placeholder="exp_title_ph" value="{{ $exp.Title }}">
                             <input type="text" name="experience[{{ $index }}].company" placeholder="公司名称"
-                                value="{{ $exp.Company }}">
+                                data-i18n-placeholder="exp_company_ph" value="{{ $exp.Company }}">
                         </div>
                         <input type="text" name="experience[{{ $index }}].date" placeholder="时间段 (例如: 2020 - 至今)"
-                            style="width: 100%; margin-top: 0.5rem;" value="{{ $exp.Date }}">
-                        <textarea name="experience[{{ $index }}].description" placeholder="工作内容描述" rows="3"
+                            data-i18n-placeholder="exp_date_ph" style="width: 100%; margin-top: 0.5rem;"
+                            value="{{ $exp.Date }}">
+                        <textarea name="experience[{{ $index }}].description" placeholder="工作内容描述"
+                            data-i18n-placeholder="exp_desc_ph" rows="3"
                             style="width: 100%; margin-top: 0.5rem;">{{ $exp.Description }}</textarea>
                     </div>
                     {{ end }}
@@ -111,12 +118,15 @@
                         <button type="button" onclick="removeItem(this)"
                             style="position: absolute; right: 10px; top: 10px; background: #dc3545; color: white; border: none; padding: 2px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">删除</button>
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-right: 40px;">
-                            <input type="text" name="experience[0].title" placeholder="职位名称">
-                            <input type="text" name="experience[0].company" placeholder="公司名称">
+                            <input type="text" name="experience[0].title" placeholder="职位名称"
+                                data-i18n-placeholder="exp_title_ph">
+                            <input type="text" name="experience[0].company" placeholder="公司名称"
+                                data-i18n-placeholder="exp_company_ph">
                         </div>
                         <input type="text" name="experience[0].date" placeholder="时间段 (例如: 2020 - 至今)"
-                            style="width: 100%; margin-top: 0.5rem;">
-                        <textarea name="experience[0].description" placeholder="工作内容描述" rows="3"
+                            data-i18n-placeholder="exp_date_ph" style="width: 100%; margin-top: 0.5rem;">
+                        <textarea name="experience[0].description" placeholder="工作内容描述"
+                            data-i18n-placeholder="exp_desc_ph" rows="3"
                             style="width: 100%; margin-top: 0.5rem;"></textarea>
                     </div>
                     {{ end }}
@@ -127,10 +137,10 @@
             <section style="margin-bottom: 2rem;">
                 <div
                     style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 0.5rem; margin-bottom: 1rem;">
-                    <h3 style="margin: 0;">教育背景</h3>
+                    <h3 style="margin: 0;" data-i18n="education">教育背景</h3>
                     <button type="button" onclick="addItem('education')"
                         style="background: #007bff; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">+
-                        添加教育</button>
+                        <span data-i18n="add_education">添加教育</span></button>
                 </div>
 
                 <div id="education-list">
@@ -142,12 +152,13 @@
                             style="position: absolute; right: 10px; top: 10px; background: #dc3545; color: white; border: none; padding: 2px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">删除</button>
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-right: 40px;">
                             <input type="text" name="education[{{ $index }}].degree" placeholder="学位 / 专业"
-                                value="{{ $edu.Degree }}">
+                                data-i18n-placeholder="edu_degree_ph" value="{{ $edu.Degree }}">
                             <input type="text" name="education[{{ $index }}].school" placeholder="学校名称"
-                                value="{{ $edu.School }}">
+                                data-i18n-placeholder="edu_school_ph" value="{{ $edu.School }}">
                         </div>
                         <input type="text" name="education[{{ $index }}].date" placeholder="毕业年份"
-                            style="width: 100%; margin-top: 0.5rem;" value="{{ $edu.Date }}">
+                            data-i18n-placeholder="edu_date_ph" style="width: 100%; margin-top: 0.5rem;"
+                            value="{{ $edu.Date }}">
                     </div>
                     {{ end }}
                     {{ else }}
@@ -157,17 +168,19 @@
                         <button type="button" onclick="removeItem(this)"
                             style="position: absolute; right: 10px; top: 10px; background: #dc3545; color: white; border: none; padding: 2px 8px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">删除</button>
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-right: 40px;">
-                            <input type="text" name="education[0].degree" placeholder="学位 / 专业">
-                            <input type="text" name="education[0].school" placeholder="学校名称">
+                            <input type="text" name="education[0].degree" placeholder="学位 / 专业"
+                                data-i18n-placeholder="edu_degree_ph">
+                            <input type="text" name="education[0].school" placeholder="学校名称"
+                                data-i18n-placeholder="edu_school_ph">
                         </div>
                         <input type="text" name="education[0].date" placeholder="毕业年份"
-                            style="width: 100%; margin-top: 0.5rem;">
+                            data-i18n-placeholder="edu_date_ph" style="width: 100%; margin-top: 0.5rem;">
                     </div>
                     {{ end }}
                 </div>
             </section>
 
-            <button type="submit"
+            <button type="submit" data-i18n="preview_btn"
                 style="background: #28a745; color: white; border: none; padding: 1rem 2rem; font-size: 1.2rem; border-radius: 5px; cursor: pointer; width: 100%;">生成完整预览
                 / 打印</button>
         </form>
