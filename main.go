@@ -30,7 +30,7 @@ func main() {
 			router.Use(func(c *gin.Context) {
 				if c.Request.Method == "GET" {
 					p := c.Request.URL.Path
-					if !strings.HasPrefix(p, "/static") && p != "/robots.txt" && p != "/sitemap.xml" && p != "/favicon.ico" {
+					if !strings.HasPrefix(p, "/static") && !strings.HasPrefix(p, "/.well-known") && p != "/robots.txt" && p != "/sitemap.xml" && p != "/favicon.ico" && p != "/metrics/snapshot" {
 						metrics.IncVisit()
 					}
 				}
@@ -47,6 +47,7 @@ func main() {
 			router.GET("/robots.txt", handlers.Robots)
 			router.GET("/sitemap.xml", handlers.Sitemap)
 			router.POST("/metrics/generate", handlers.GenerateEvent)
+			router.GET("/metrics/snapshot", handlers.SnapshotAPI)
 
 			port := os.Getenv("PORT")
 			if port == "" {

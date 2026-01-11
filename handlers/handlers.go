@@ -123,6 +123,11 @@ func GenerateEvent(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"ok": true})
 }
 
+func SnapshotAPI(c *gin.Context) {
+	v, g := metrics.Snapshot()
+	c.JSON(http.StatusOK, gin.H{"visits": v, "generates": g})
+}
+
 func Robots(c *gin.Context) {
 	c.Header("Content-Type", "text/plain; charset=utf-8")
 	scheme := c.Request.Header.Get("X-Forwarded-Proto")

@@ -30,21 +30,27 @@
     }
     </script>
     <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
     <script src="/static/js/i18n.js" defer></script>
 </head>
 
 <body>
     <nav style="background: #333; color: white; padding: 1rem;">
         <div class="container" style="display: flex; justify-content: space-between; align-items: center;">
-            <a href="/" style="color: white; text-decoration: none; font-weight: bold;" data-i18n="brand">简单简历</a>
+            <a href="/"
+                style="color: white; text-decoration: none; font-weight: bold; display:flex; align-items:center; gap:8px;"
+                data-i18n="brand">
+                <img src="/static/icons/logo.svg" alt="logo" width="20" height="20" style="vertical-align:middle;">
+                简单简历
+            </a>
             <div>
                 <a href="/editor" style="color: white; text-decoration: none; margin-left: 15px;"
                     data-i18n="nav_create">创建简历</a>
                 <button id="lang-toggle"
                     style="margin-left: 15px; background: #555; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer;">English</button>
                 <span style="margin-left: 15px; color: #ddd; font-size: 0.9rem;">
-                    <span data-i18n="visits_label">访问</span>: {{ .Visits }} | <span
-                        data-i18n="generates_label">生成</span>: {{ .Generates }}
+                    <span data-i18n="visits_label">访问</span>: <span id="visits-count">{{ .Visits }}</span> | <span
+                        data-i18n="generates_label">生成</span>: <span id="generates-count">{{ .Generates }}</span>
                 </span>
             </div>
         </div>
