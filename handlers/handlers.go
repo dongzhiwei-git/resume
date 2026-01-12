@@ -57,11 +57,12 @@ func Editor(c *gin.Context) {
 	}
 	canonical := scheme + "://" + c.Request.Host + c.Request.URL.Path
 	c.HTML(http.StatusOK, "editor.html", gin.H{
-		"title":     "编辑简历",
-		"Resume":    initialResume,
-		"Visits":    v,
-		"Generates": g,
-		"Canonical": canonical,
+		"title":        "编辑简历",
+		"Resume":       initialResume,
+		"Visits":       v,
+		"Generates":    g,
+		"Canonical":    canonical,
+		"ServerConfig": config.AppConfig,
 	})
 }
 
@@ -95,9 +96,10 @@ func Preview(c *gin.Context) {
 			}
 			return string(b)
 		}(),
-		"Visits":    v,
-		"Generates": g,
-		"Canonical": canonical,
+		"Visits":       v,
+		"Generates":    g,
+		"Canonical":    canonical,
+		"ServerConfig": config.AppConfig,
 	})
 }
 
@@ -135,6 +137,92 @@ func SnapshotAPI(c *gin.Context) {
 func Health(c *gin.Context) {
 	ready := metrics.Ready()
 	c.JSON(http.StatusOK, gin.H{"status": "ok", "db": ready})
+}
+
+func AiPage(c *gin.Context) {
+	if !config.AppConfig.EnableAIAssistant {
+		c.String(http.StatusNotFound, "Not enabled")
+		return
+	}
+	v, g := metrics.Snapshot()
+	scheme := c.Request.Header.Get("X-Forwarded-Proto")
+	if scheme == "" {
+		scheme = "http"
+	}
+	canonical := scheme + "://" + c.Request.Host + c.Request.URL.Path
+	c.HTML(http.StatusOK, "ai.html", gin.H{
+		"title":        "AI 简历助手",
+		"Visits":       v,
+		"Generates":    g,
+		"Canonical":    canonical,
+		"ServerConfig": config.AppConfig,
+	})
+}
+
+type chatMessage struct {
+	Role    string `json:"role"`
+	Content string `json:"content"`
+}
+
+type aiAskReq struct {
+	Messages []chatMessage `json:"messages"`
+}
+
+func ApiAiAsk(c *gin.Context) {
+	if !config.AppConfig.EnableAIAssistant {
+		c.String(http.StatusForbidden, "Disabled")
+		return
+	}
+	apiURL := os.Getenv("DEEPSEEK_API_URL")
+	if apiURL == "" {
+		apiURL = "https://api.deepseek.com/v1/chat/completions"
+	}
+	apiKey := os.Getenv("DEEPSEEK_API_KEY")
+	if apiKey == "" {
+		c.String(http.StatusBadRequest, "Missing API key")
+		return
+	}
+	model := os.Getenv("DEEPSEEK_MODEL")
+	if model == "" {
+		model = "deepseek-chat"
+	}
+	body := aiAskReq{}
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.String(http.StatusBadRequest, "Invalid JSON")
+		return
+	}
+	promptBytes, _ := os.ReadFile("docs/prompts/deepseek_resume_prompt.md")
+	sys := chatMessage{Role: "system", Content: string(promptBytes)}
+	msgs := append([]chatMessage{sys}, body.Messages...)
+	payload := map[string]any{"model": model, "messages": msgs}
+	b, _ := json.Marshal(payload)
+	req, _ := http.NewRequest("POST", apiURL, bytes.NewReader(b))
+	req.Header.Set("Authorization", "Bearer "+apiKey)
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		c.String(http.StatusBadGateway, "AI unavailable")
+		return
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		c.String(http.StatusBadGateway, "AI error")
+		return
+	}
+	var out struct {
+		Choices []struct {
+			Message chatMessage `json:"message"`
+		} `json:"choices"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {
+		c.String(http.StatusBadGateway, "Bad AI response")
+		return
+	}
+	if len(out.Choices) == 0 {
+		c.String(http.StatusBadGateway, "No answer")
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": out.Choices[0].Message})
 }
 
 func DownloadPDF(c *gin.Context) {

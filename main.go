@@ -12,6 +12,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/dongzhiwei-git/resume/config"
 	"github.com/dongzhiwei-git/resume/handlers"
 	"github.com/dongzhiwei-git/resume/metrics"
 	"github.com/gin-gonic/gin"
@@ -47,6 +48,8 @@ func main() {
 			router.GET("/editor", handlers.Editor)
 			router.POST("/preview", handlers.Preview)
 			router.POST("/api/preview", handlers.ApiPreview)
+			router.GET("/ai", handlers.AiPage)
+			router.POST("/api/ai/ask", handlers.ApiAiAsk)
 			router.POST("/import", handlers.Import)
 			router.GET("/robots.txt", handlers.Robots)
 			router.GET("/sitemap.xml", handlers.Sitemap)
@@ -90,6 +93,9 @@ func main() {
 			defer cancel()
 			if err := srv.Shutdown(ctx); err != nil {
 				log.Printf("server shutdown error: %v", err)
+			}
+			if v := os.Getenv("ENABLE_AI_ASSISTANT"); v != "" {
+				config.AppConfig.EnableAIAssistant = v == "1" || strings.ToLower(v) == "true"
 			}
 		}()
 	}

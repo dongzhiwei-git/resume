@@ -1,0 +1,32 @@
+{{ template "header.html" . }}
+<div class="container" style="padding: 2rem 0;">
+  <h1 style="margin-bottom:1rem;">AI 简历助手</h1>
+  <div class="no-print" style="display:flex; gap:1rem; align-items:flex-start;">
+    <textarea id="ai-input" rows="6" style="flex:1; width:60%; padding:0.75rem; font-size:1rem;" placeholder="请输入补充信息或修改要求"></textarea>
+    <button id="ai-send" style="background:#007bff; color:#fff; border:none; padding:0.75rem 1.25rem; border-radius:6px; cursor:pointer;">发送</button>
+  </div>
+  <div id="ai-chat" style="margin-top:1.5rem; background:#fafafa; border:1px solid #eee; border-radius:6px; padding:1rem; min-height:200px;"></div>
+</div>
+<script>
+const chat = [];
+function render() {
+  const el = document.getElementById('ai-chat');
+  el.innerHTML = chat.map(m => `<div style="margin-bottom:0.75rem;"><b>${m.role==='user'?'你':'助手'}:</b> <div>${m.content.replace(/</g,'&lt;')}</div></div>`).join('');
+}
+document.getElementById('ai-send').onclick = async () => {
+  const input = document.getElementById('ai-input');
+  const v = input.value.trim();
+  if (!v) return;
+  chat.push({role:'user', content:v});
+  render();
+  input.value='';
+  try {
+    const resp = await fetch('/api/ai/ask', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({messages: chat})});
+    if (!resp.ok) throw new Error('AI error');
+    const data = await resp.json();
+    if (data && data.message) chat.push(data.message);
+    render();
+  } catch(e) {}
+};
+</script>
+{{ template "footer.html" . }}

@@ -5,6 +5,7 @@ services:
       - GIN_MODE=release
       - PORT=8080
       - MYSQL_DSN=root:password@tcp(mysql:3306)/resume?parseTime=true&charset=utf8mb4
+      - ENABLE_AI_ASSISTANT=${ENABLE_AI_ASSISTANT}
     restart: unless-stopped
     depends_on:
       mysql:
@@ -20,6 +21,7 @@ services:
       - GIN_MODE=release
       - PORT=8080
       - MYSQL_DSN=root:password@tcp(mysql:3306)/resume?parseTime=true&charset=utf8mb4
+      - ENABLE_AI_ASSISTANT=${ENABLE_AI_ASSISTANT}
     restart: unless-stopped
     depends_on:
       mysql:
