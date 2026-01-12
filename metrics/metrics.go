@@ -50,3 +50,5 @@ func Snapshot() (int64, int64) {
 	}
 	return atomic.LoadInt64(&visits), atomic.LoadInt64(&generates)
 }
+
+func Ready() bool { return db != nil }

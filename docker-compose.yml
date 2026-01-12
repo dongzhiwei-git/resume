@@ -1,18 +1,50 @@
-version: "3.8"
 services:
-  simple-resume:
+  simple-resume-a:
     build: .
-    container_name: simple-resume
     environment:
       - GIN_MODE=release
       - PORT=8080
       - MYSQL_DSN=root:password@tcp(mysql:3306)/resume?parseTime=true&charset=utf8mb4
-    ports:
-      - "8080:8080"
+      - PDF_API_URL=${PDF_API_URL}
+      - PDF_API_KEY=${PDF_API_KEY}
     restart: unless-stopped
     depends_on:
       mysql:
         condition: service_healthy
+    healthcheck:
+      test: [ "CMD-SHELL", "wget -qO- http://localhost:8080/healthz | grep -q ok || exit 1" ]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+  simple-resume-b:
+    build: .
+    environment:
+      - GIN_MODE=release
+      - PORT=8080
+      - MYSQL_DSN=root:password@tcp(mysql:3306)/resume?parseTime=true&charset=utf8mb4
+      - PDF_API_URL=${PDF_API_URL}
+      - PDF_API_KEY=${PDF_API_KEY}
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD-SHELL", "wget -qO- http://localhost:8080/healthz | grep -q ok || exit 1" ]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "8080:80"
+    volumes:
+      - ./deploy/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      simple-resume-a:
+        condition: service_healthy
+      simple-resume-b:
+        condition: service_healthy
+    restart: unless-stopped
   mysql:
     image: mysql:8
     container_name: resume-mysql
@@ -25,7 +57,7 @@ services:
       - db_data:/var/lib/mysql
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-ppassword", "-h", "127.0.0.1"]
+      test: [ "CMD", "mysqladmin", "ping", "-ppassword", "-h", "127.0.0.1" ]
       interval: 5s
       timeout: 3s
       retries: 20

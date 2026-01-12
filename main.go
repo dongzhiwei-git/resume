@@ -1,11 +1,15 @@
 package main
 
 import (
+	"context"
 	"embed"
 	"html/template"
 	"log"
+	"net/http"
 	"os"
+	"os/signal"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/dongzhiwei-git/resume/handlers"
@@ -43,11 +47,13 @@ func main() {
 			router.GET("/editor", handlers.Editor)
 			router.POST("/preview", handlers.Preview)
 			router.POST("/api/preview", handlers.ApiPreview)
+			router.POST("/download/pdf", handlers.DownloadPDF)
 			router.POST("/import", handlers.Import)
 			router.GET("/robots.txt", handlers.Robots)
 			router.GET("/sitemap.xml", handlers.Sitemap)
 			router.POST("/metrics/generate", handlers.GenerateEvent)
 			router.GET("/metrics/snapshot", handlers.SnapshotAPI)
+			router.GET("/healthz", handlers.Health)
 
 			port := os.Getenv("PORT")
 			if port == "" {
@@ -71,9 +77,20 @@ func main() {
 					panic("database not ready")
 				}
 			}
-			if err := router.Run(":" + port); err != nil {
-				log.Printf("server error: %v", err)
-				time.Sleep(2 * time.Second)
+			srv := &http.Server{Addr: ":" + port, Handler: router}
+			go func() {
+				if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+					log.Printf("server error: %v", err)
+				}
+			}()
+
+			quit := make(chan os.Signal, 1)
+			signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+			<-quit
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+			if err := srv.Shutdown(ctx); err != nil {
+				log.Printf("server shutdown error: %v", err)
 			}
 		}()
 	}

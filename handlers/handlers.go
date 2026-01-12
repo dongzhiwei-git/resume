@@ -1,9 +1,13 @@
 package handlers
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"html/template"
+	"io"
 	"net/http"
+	"os"
 	"regexp"
 	"sort"
 	"strconv"
@@ -126,6 +130,85 @@ func GenerateEvent(c *gin.Context) {
 func SnapshotAPI(c *gin.Context) {
 	v, g := metrics.Snapshot()
 	c.JSON(http.StatusOK, gin.H{"visits": v, "generates": g})
+}
+
+func Health(c *gin.Context) {
+	ready := metrics.Ready()
+	c.JSON(http.StatusOK, gin.H{"status": "ok", "db": ready})
+}
+
+func DownloadPDF(c *gin.Context) {
+	apiURL := os.Getenv("PDF_API_URL")
+	apiKey := os.Getenv("PDF_API_KEY")
+	if apiURL == "" || apiKey == "" {
+		c.String(http.StatusBadRequest, "PDF service not configured")
+		return
+	}
+
+	var resume models.Resume
+	ct := c.GetHeader("Content-Type")
+	if strings.HasPrefix(ct, "application/json") {
+		if err := c.ShouldBindJSON(&resume); err != nil {
+			c.String(http.StatusBadRequest, "Invalid JSON")
+			return
+		}
+	} else {
+		if err := c.Request.ParseMultipartForm(32 << 20); err != nil {
+			c.String(http.StatusBadRequest, "Invalid form")
+			return
+		}
+		resume = parseResumeFromForm(c)
+	}
+
+	if resume.Config.Color == "" {
+		resume.Config.Color = "#333333"
+	}
+	if resume.Config.Template == "" {
+		resume.Config.Template = "classic"
+	}
+	if resume.Config.PaperSize == "" {
+		resume.Config.PaperSize = "a4"
+	}
+
+	tpl, err := template.ParseFiles("templates/resume_content.html")
+	if err != nil {
+		c.String(http.StatusInternalServerError, "Template error")
+		return
+	}
+	var buf bytes.Buffer
+	if err := tpl.Execute(&buf, gin.H{"Resume": resume}); err != nil {
+		c.String(http.StatusInternalServerError, "Render error")
+		return
+	}
+	cssBytes, _ := os.ReadFile("static/css/style.css")
+	html := "<!DOCTYPE html><html><head><meta charset=\"utf-8\"><style>" + string(cssBytes) + "</style></head><body>" + buf.String() + "</body></html>"
+
+	payload := map[string]any{
+		"html": html,
+		"options": map[string]any{
+			"printBackground": true,
+			"format":          strings.ToUpper(resume.Config.PaperSize),
+			"margin":          map[string]string{"top": "0.5in", "bottom": "0.5in", "left": "0.5in", "right": "0.5in"},
+		},
+	}
+	body, _ := json.Marshal(payload)
+	req, _ := http.NewRequest("POST", apiURL, bytes.NewReader(body))
+	req.Header.Set("Authorization", "Bearer "+apiKey)
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		c.String(http.StatusBadGateway, "PDF service unavailable")
+		return
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		c.String(http.StatusBadGateway, "PDF generation failed")
+		return
+	}
+	metrics.IncGenerate()
+	c.Header("Content-Type", "application/pdf")
+	c.Header("Content-Disposition", "attachment; filename=resume.pdf")
+	io.Copy(c.Writer, resp.Body)
 }
 
 func Robots(c *gin.Context) {

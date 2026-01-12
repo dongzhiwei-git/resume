@@ -5,9 +5,9 @@
 
     <div class="no-print" style="text-align: center; margin-top: 2rem;">
         <input type="hidden" name="avatar_existing" value="{{ .Resume.Avatar }}">
-        <button id="print-btn" onclick="onPrint()" data-i18n="preview_btn"
-            style="background: #007bff; color: white; border: none; padding: 1rem 2rem; border-radius: 5px; cursor: pointer; font-size: 1.1rem; margin-right: 1rem;">保存为
-            PDF / 打印</button>
+        <button id="download-btn" onclick="downloadPdf()" data-i18n="preview_btn"
+            style="background: #007bff; color: white; border: none; padding: 1rem 2rem; border-radius: 5px; cursor: pointer; font-size: 1.1rem; margin-right: 1rem;">下载
+            PDF</button>
         <button onclick="exportJson()"
             style="background: #17a2b8; color: white; border: none; padding: 1rem 2rem; border-radius: 5px; cursor: pointer; font-size: 1.1rem; margin-right: 1rem;">导出数据
             (JSON)</button>
@@ -17,27 +17,35 @@
 </div>
 
 <script>
-    async function onPrint() {
-        const btn = document.getElementById('print-btn');
+    async function downloadPdf() {
+        const btn = document.getElementById('download-btn');
         if (btn) btn.disabled = true;
-        try { await fetch('/metrics/generate', { method: 'POST' }); } catch (e) { }
-        const gc = document.getElementById('generates-count');
-        if (gc) {
-            const n = parseInt(gc.textContent || '0', 10);
-            if (!isNaN(n)) gc.textContent = String(n + 1);
-        }
-        window.print();
-        setTimeout(async () => {
-            try {
-                const r = await fetch('/metrics/snapshot');
-                const m = await r.json();
-                const ge = document.getElementById('generates-count');
-                const vi = document.getElementById('visits-count');
-                if (ge && typeof m.generates === 'number') ge.textContent = String(m.generates);
-                if (vi && typeof m.visits === 'number') vi.textContent = String(m.visits);
-            } catch (e) { }
-            if (btn) btn.disabled = false;
-        }, 500);
+        try {
+            const el = document.getElementById('resume-data');
+            const resumeData = JSON.parse(el.textContent || '{}');
+            const resp = await fetch('/download/pdf', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(resumeData)
+            });
+            if (!resp.ok) throw new Error('PDF failed');
+            const blob = await resp.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'resume.pdf';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+            const r = await fetch('/metrics/snapshot');
+            const m = await r.json();
+            const ge = document.getElementById('generates-count');
+            const vi = document.getElementById('visits-count');
+            if (ge && typeof m.generates === 'number') ge.textContent = String(m.generates);
+            if (vi && typeof m.visits === 'number') vi.textContent = String(m.visits);
+        } catch (e) { }
+        if (btn) btn.disabled = false;
     }
 
     function exportJson() {
