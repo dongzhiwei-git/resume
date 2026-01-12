@@ -5,8 +5,6 @@ services:
       - GIN_MODE=release
       - PORT=8080
       - MYSQL_DSN=root:password@tcp(mysql:3306)/resume?parseTime=true&charset=utf8mb4
-      - PDF_API_URL=${PDF_API_URL}
-      - PDF_API_KEY=${PDF_API_KEY}
     restart: unless-stopped
     depends_on:
       mysql:
@@ -22,8 +20,6 @@ services:
       - GIN_MODE=release
       - PORT=8080
       - MYSQL_DSN=root:password@tcp(mysql:3306)/resume?parseTime=true&charset=utf8mb4
-      - PDF_API_URL=${PDF_API_URL}
-      - PDF_API_KEY=${PDF_API_KEY}
     restart: unless-stopped
     depends_on:
       mysql:

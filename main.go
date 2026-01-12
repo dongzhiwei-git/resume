@@ -47,7 +47,6 @@ func main() {
 			router.GET("/editor", handlers.Editor)
 			router.POST("/preview", handlers.Preview)
 			router.POST("/api/preview", handlers.ApiPreview)
-			router.POST("/download/pdf", handlers.DownloadPDF)
 			router.POST("/import", handlers.Import)
 			router.GET("/robots.txt", handlers.Robots)
 			router.GET("/sitemap.xml", handlers.Sitemap)
