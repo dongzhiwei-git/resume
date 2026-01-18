@@ -17,9 +17,6 @@ linters:
     - errcheck
     - unused
     - exportloopref
-  disable:
-    - gocritic
-    - ruleguard
 linters-settings:
   staticcheck:
     checks: ["all"]
