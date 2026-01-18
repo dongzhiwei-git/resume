@@ -21,6 +21,7 @@ services:
         condition: service_healthy
     restart: unless-stopped
   app-runtime:
+    profiles: [ "runtime" ]
     build:
       context: .
       dockerfile: Dockerfile.runtime
@@ -41,6 +42,7 @@ services:
         condition: service_healthy
     restart: unless-stopped
   simple-resume-a:
+    profiles: [ "cluster" ]
     build: .
     environment:
       - GIN_MODE=release
@@ -57,6 +59,7 @@ services:
       timeout: 3s
       retries: 20
   simple-resume-b:
+    profiles: [ "cluster" ]
     build: .
     environment:
       - GIN_MODE=release
@@ -73,6 +76,7 @@ services:
       timeout: 3s
       retries: 20
   nginx:
+    profiles: [ "cluster" ]
     image: nginx:alpine
     ports:
       - "8080:80"
@@ -85,6 +89,7 @@ services:
         condition: service_healthy
     restart: unless-stopped
   nginx-local:
+    profiles: [ "local" ]
     image: nginx:alpine
     ports:
       - "8081:80"
