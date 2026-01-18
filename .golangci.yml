@@ -1,0 +1,19 @@
+run:
+  timeout: 2m
+  concurrency: 4
+  allow-parallel-runners: true
+issues:
+  max-same-issues: 0
+linters:
+  enable:
+    - govet
+    - staticcheck
+    - gosimple
+    - ineffassign
+    - errcheck
+    - unused
+    - exportloopref
+  disable-all: false
+linters-settings:
+  staticcheck:
+    checks: ["all"]
