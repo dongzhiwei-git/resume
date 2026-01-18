@@ -31,6 +31,10 @@ func main() {
 				}
 			}()
 
+			if v := os.Getenv("ENABLE_AI_ASSISTANT"); v != "" {
+				config.AppConfig.EnableAIAssistant = v == "1" || strings.ToLower(v) == "true"
+			}
+			log.Printf("AI assistant enabled: %v", config.AppConfig.EnableAIAssistant)
 			router := gin.Default()
 			router.Use(func(c *gin.Context) {
 				if c.Request.Method == "GET" {
@@ -50,6 +54,11 @@ func main() {
 			router.POST("/api/preview", handlers.ApiPreview)
 			router.GET("/ai", handlers.AiPage)
 			router.POST("/api/ai/ask", handlers.ApiAiAsk)
+			router.POST("/api/ai/stream", handlers.ApiAiStream)
+			router.POST("/api/ai/generate_simple", handlers.ApiAiGenerateSimple)
+			router.POST("/api/ai/revise", handlers.ApiAiRevise)
+			router.POST("/api/preview_json", handlers.ApiPreviewJSON)
+			router.POST("/download/pdf", handlers.DownloadPDF)
 			router.POST("/import", handlers.Import)
 			router.GET("/robots.txt", handlers.Robots)
 			router.GET("/sitemap.xml", handlers.Sitemap)
@@ -93,9 +102,6 @@ func main() {
 			defer cancel()
 			if err := srv.Shutdown(ctx); err != nil {
 				log.Printf("server shutdown error: %v", err)
-			}
-			if v := os.Getenv("ENABLE_AI_ASSISTANT"); v != "" {
-				config.AppConfig.EnableAIAssistant = v == "1" || strings.ToLower(v) == "true"
 			}
 		}()
 	}

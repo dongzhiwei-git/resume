@@ -1,32 +1,112 @@
 {{ template "header.html" . }}
 <div class="container" style="padding: 2rem 0;">
   <h1 style="margin-bottom:1rem;">AI 简历助手</h1>
-  <div class="no-print" style="display:flex; gap:1rem; align-items:flex-start;">
-    <textarea id="ai-input" rows="6" style="flex:1; width:60%; padding:0.75rem; font-size:1rem;" placeholder="请输入补充信息或修改要求"></textarea>
-    <button id="ai-send" style="background:#007bff; color:#fff; border:none; padding:0.75rem 1.25rem; border-radius:6px; cursor:pointer;">发送</button>
+  <div class="card" style="padding:1rem; border:1px solid #eee; border-radius:6px; margin-bottom:1rem;">
+    <div style="margin-bottom:0.5rem; font-weight:600;">简单模式（最少输入一段话即可生成）</div>
+    <textarea id="simple-input" rows="4" style="width:100%; padding:0.75rem; font-size:1rem;"
+      placeholder="一句话描述：岗位、技能、经历要点（例如：后端工程师，Go/MySQL，做过支付与风控）"></textarea>
+    <div style="margin-top:0.75rem; display:flex; gap:0.5rem; align-items:center;">
+      <button id="simple-generate"
+        style="background:#ff7f50; color:#fff; border:none; padding:0.5rem 1rem; border-radius:6px; cursor:pointer;">一键生成简历</button>
+      <button id="ai-pdf"
+        style="background:#28a745; color:#fff; border:none; padding:0.5rem 1rem; border-radius:6px; cursor:pointer;">一键生成
+        PDF</button>
+      <span id="loading" style="display:none; color:#666; font-size:0.95rem;">
+        <span class="spin"
+          style="display:inline-block; width:14px; height:14px; border:2px solid #ccc; border-top-color:#007bff; border-radius:50%; margin-right:6px; animation:spin 0.8s linear infinite;"></span>
+        AI 正在思考…
+      </span>
+    </div>
+    <div id="simple-preview" style="margin-top:1rem; border-top:1px dashed #eee; padding-top:1rem;"></div>
   </div>
-  <div id="ai-chat" style="margin-top:1.5rem; background:#fafafa; border:1px solid #eee; border-radius:6px; padding:1rem; min-height:200px;"></div>
+  <div class="card" style="padding:1rem; border:1px solid #eee; border-radius:6px;">
+    <div style="margin-bottom:0.5rem; font-weight:600;">修改要求（基于当前预览进行微调）</div>
+    <textarea id="revise-input" rows="4" style="width:100%; padding:0.75rem; font-size:1rem;"
+      placeholder="例如：总结更聚焦后端；将项目 A 改写为 4 条要点并量化；增加 K8s/微服务关键词"></textarea>
+    <div style="margin-top:0.75rem; display:flex; gap:0.5rem;">
+      <button id="revise-send"
+        style="background:#007bff; color:#fff; border:none; padding:0.5rem 1rem; border-radius:6px; cursor:pointer;">发送修改</button>
+    </div>
+    <div style="margin-top:0.75rem; font-weight:600;">我的输入记录</div>
+    <ul id="notes" style="list-style:none; padding:0; margin:0;"></ul>
+  </div>
 </div>
 <script>
-const chat = [];
-function render() {
-  const el = document.getElementById('ai-chat');
-  el.innerHTML = chat.map(m => `<div style="margin-bottom:0.75rem;"><b>${m.role==='user'?'你':'助手'}:</b> <div>${m.content.replace(/</g,'&lt;')}</div></div>`).join('');
-}
-document.getElementById('ai-send').onclick = async () => {
-  const input = document.getElementById('ai-input');
-  const v = input.value.trim();
-  if (!v) return;
-  chat.push({role:'user', content:v});
-  render();
-  input.value='';
-  try {
-    const resp = await fetch('/api/ai/ask', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({messages: chat})});
-    if (!resp.ok) throw new Error('AI error');
-    const data = await resp.json();
-    if (data && data.message) chat.push(data.message);
-    render();
-  } catch(e) {}
-};
+  let latestResume = null;
+  const store = {
+    get() { try { return JSON.parse(localStorage.getItem('ai_notes') || '[]') } catch (e) { return [] } },
+    set(list) { localStorage.setItem('ai_notes', JSON.stringify(list)) }
+  };
+  function renderNotes() { const list = store.get(); const ul = document.getElementById('notes'); ul.innerHTML = list.map((t, i) => `<li style="padding:0.25rem 0;">${t}</li>`).join('') }
+  document.getElementById('simple-generate').onclick = async () => {
+    const v = document.getElementById('simple-input').value.trim();
+    if (!v) return;
+    try {
+      document.getElementById('loading').style.display = 'inline-flex';
+      document.getElementById('simple-generate').disabled = true;
+      const resp = await fetch('/api/ai/generate_simple', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ input: v }) });
+      if (!resp.ok) throw new Error('AI error');
+      const resume = await resp.json();
+      latestResume = resume;
+      const pv = await fetch('/api/preview_json', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(resume) });
+      const html = await pv.text();
+      document.getElementById('simple-preview').innerHTML = html;
+      document.getElementById('simple-input').value = '';
+    } catch (e) { }
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('simple-generate').disabled = false;
+  };
+  document.getElementById('revise-send').onclick = async () => {
+    const v = document.getElementById('revise-input').value.trim();
+    if (!v || !latestResume) return;
+    const notes = store.get(); notes.unshift(v); store.set(notes.slice(0, 50)); renderNotes();
+    document.getElementById('revise-input').value = '';
+    try {
+      document.getElementById('loading').style.display = 'inline-flex';
+      document.getElementById('revise-send').disabled = true;
+      const resp = await fetch('/api/ai/revise', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ instruction: v, resume: latestResume }) });
+      if (!resp.ok) throw new Error('AI error');
+      const resume = await resp.json();
+      latestResume = resume;
+      const pv = await fetch('/api/preview_json', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(resume) });
+      const html = await pv.text();
+      document.getElementById('simple-preview').innerHTML = html;
+    } catch (e) { }
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('revise-send').disabled = false;
+  };
+  document.getElementById('ai-pdf').onclick = async () => {
+    const resume = latestResume;
+    if (!resume) return;
+    try {
+      const resp = await fetch('/download/pdf', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(resume) });
+      if (resp.status === 400) {
+        const pv = await fetch('/api/preview_json', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(resume) });
+        const htmlFrag = await pv.text();
+        const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><link rel="stylesheet" href="/static/css/style.css"><style>@page{margin:10mm}</style></head><body>${htmlFrag}<script>setTimeout(()=>window.print(),300)<\/script></body></html>`;
+        const w = window.open('', '_blank');
+        w.document.open();
+        w.document.write(html);
+        w.document.close();
+        return;
+      }
+      if (!resp.ok) throw new Error('PDF failed');
+      const blob = await resp.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = 'resume.pdf'; document.body.appendChild(a); a.click(); a.remove(); window.URL.revokeObjectURL(url);
+    } catch (e) { }
+  };
+  renderNotes();
 </script>
+<style>
+  @keyframes spin {
+    from {
+      transform: rotate(0);
+    }
+
+    to {
+      transform: rotate(360deg);
+    }
+  }
+</style>
 {{ template "footer.html" . }}

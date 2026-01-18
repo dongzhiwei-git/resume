@@ -1,4 +1,45 @@
 services:
+  app:
+    build:
+      context: .
+      args:
+        GOPROXY: ${GOPROXY}
+    environment:
+      - GIN_MODE=release
+      - PORT=8080
+      - MYSQL_DSN=root:password@tcp(mysql:3306)/resume?parseTime=true&charset=utf8mb4
+      - ENABLE_AI_ASSISTANT=${ENABLE_AI_ASSISTANT}
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
+      - DEEPSEEK_API_URL=${DEEPSEEK_API_URL}
+      - DEEPSEEK_MODEL=${DEEPSEEK_MODEL}
+      - PDF_API_URL=${PDF_API_URL}
+      - PDF_API_KEY=${PDF_API_KEY}
+    ports:
+      - "8080:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    restart: unless-stopped
+  app-runtime:
+    build:
+      context: .
+      dockerfile: Dockerfile.runtime
+    environment:
+      - GIN_MODE=release
+      - PORT=8080
+      - MYSQL_DSN=root:password@tcp(mysql:3306)/resume?parseTime=true&charset=utf8mb4
+      - ENABLE_AI_ASSISTANT=${ENABLE_AI_ASSISTANT}
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
+      - DEEPSEEK_API_URL=${DEEPSEEK_API_URL}
+      - DEEPSEEK_MODEL=${DEEPSEEK_MODEL}
+      - PDF_API_URL=${PDF_API_URL}
+      - PDF_API_KEY=${PDF_API_KEY}
+    ports:
+      - "8080:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    restart: unless-stopped
   simple-resume-a:
     build: .
     environment:
@@ -43,6 +84,13 @@ services:
       simple-resume-b:
         condition: service_healthy
     restart: unless-stopped
+  nginx-local:
+    image: nginx:alpine
+    ports:
+      - "8081:80"
+    volumes:
+      - ./deploy/nginx.local.conf:/etc/nginx/conf.d/default.conf:ro
+    restart: unless-stopped
   mysql:
     image: mysql:8
     container_name: resume-mysql
@@ -62,3 +110,5 @@ services:
 
 volumes:
   db_data:
+
+

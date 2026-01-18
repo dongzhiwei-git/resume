@@ -1,0 +1,9 @@
+FROM alpine:3.18
+WORKDIR /app
+COPY build/resume-to-job /app/resume-to-job
+COPY templates /app/templates
+COPY static /app/static
+COPY docs /app/docs
+EXPOSE 8080
+ENV GIN_MODE=release
+CMD ["/app/resume-to-job"]

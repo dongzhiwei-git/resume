@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/json"
 	"fmt"
@@ -223,6 +224,281 @@ func ApiAiAsk(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": out.Choices[0].Message})
+}
+
+func ApiAiStream(c *gin.Context) {
+	if !config.AppConfig.EnableAIAssistant {
+		c.String(http.StatusForbidden, "Disabled")
+		return
+	}
+	apiURL := os.Getenv("DEEPSEEK_API_URL")
+	if apiURL == "" {
+		apiURL = "https://api.deepseek.com/v1/chat/completions"
+	}
+	apiKey := os.Getenv("DEEPSEEK_API_KEY")
+	if apiKey == "" {
+		c.String(http.StatusBadRequest, "Missing API key")
+		return
+	}
+	model := os.Getenv("DEEPSEEK_MODEL")
+	if model == "" {
+		model = "deepseek-chat"
+	}
+	body := aiAskReq{}
+	if err := c.ShouldBindJSON(&body); err != nil {
+		c.String(http.StatusBadRequest, "Invalid JSON")
+		return
+	}
+	promptBytes, _ := os.ReadFile("docs/prompts/deepseek_resume_prompt.md")
+	sys := chatMessage{Role: "system", Content: string(promptBytes)}
+	msgs := append([]chatMessage{sys}, body.Messages...)
+	payload := map[string]any{"model": model, "messages": msgs, "stream": true}
+	b, _ := json.Marshal(payload)
+	req, _ := http.NewRequest("POST", apiURL, bytes.NewReader(b))
+	req.Header.Set("Authorization", "Bearer "+apiKey)
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		c.String(http.StatusBadGateway, "AI unavailable")
+		return
+	}
+	defer resp.Body.Close()
+	c.Header("Content-Type", "text/event-stream")
+	c.Header("Cache-Control", "no-cache")
+	c.Header("Connection", "keep-alive")
+	fl, ok := c.Writer.(http.Flusher)
+	if !ok {
+		c.String(http.StatusInternalServerError, "Streaming unsupported")
+		return
+	}
+	r := bufio.NewReader(resp.Body)
+	for {
+		line, err := r.ReadBytes('\n')
+		if len(line) > 0 {
+			c.Writer.Write(line)
+			fl.Flush()
+		}
+		if err != nil {
+			break
+		}
+	}
+}
+
+type simpleGenReq struct {
+	Input string `json:"input"`
+}
+
+func simpleFromInput(s string) models.Resume {
+	r := models.Resume{Summary: strings.TrimSpace(s)}
+	// try extract email
+	if m := regexp.MustCompile(`[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}`).FindString(s); m != "" {
+		r.Email = m
+	}
+	// try extract phone (11 digits)
+	if m := regexp.MustCompile(`\b1[3-9][0-9]{9}\b`).FindString(s); m != "" {
+		r.Phone = m
+	}
+	// set one experience if keywords present
+	title := "工程师"
+	if strings.Contains(s, "后端") {
+		title = "后端工程师"
+	}
+	if strings.Contains(s, "前端") {
+		title = "前端工程师"
+	}
+	if strings.Contains(s, "产品") {
+		title = "产品经理"
+	}
+	r.Experience = []models.Exp{{Title: title, Company: "", Date: time.Now().Format("2006-01"), Description: s}}
+	r.Education = []models.Edu{}
+	r.Config = models.ThemeConfig{Template: "classic", Color: "#333333", PaperSize: "a4"}
+	return r
+}
+
+func ApiAiGenerateSimple(c *gin.Context) {
+	if !config.AppConfig.EnableAIAssistant {
+		c.String(http.StatusForbidden, "Disabled")
+		return
+	}
+	apiURL := os.Getenv("DEEPSEEK_API_URL")
+	if apiURL == "" {
+		apiURL = "https://api.deepseek.com/v1/chat/completions"
+	}
+	apiKey := os.Getenv("DEEPSEEK_API_KEY")
+	if apiKey == "" {
+		c.String(http.StatusBadRequest, "Missing API key")
+		return
+	}
+	model := os.Getenv("DEEPSEEK_MODEL")
+	if model == "" {
+		model = "deepseek-chat"
+	}
+
+	reqBody := simpleGenReq{}
+	if err := c.ShouldBindJSON(&reqBody); err != nil || strings.TrimSpace(reqBody.Input) == "" {
+		c.String(http.StatusBadRequest, "Invalid input")
+		return
+	}
+	schema := `仅输出一个严格的 JSON 对象，键名与结构如下（全部小写）：
+{"name":"","email":"","phone":"","summary":"","avatar":"","config":{"template":"classic","color":"#333333","font":"","font_size":"","paper_size":"a4"},"experience":[{"title":"","company":"","date":"YYYY-MM","description":""}],"education":[{"degree":"","school":"","date":"YYYY-MM"}]}`
+	sys := chatMessage{Role: "system", Content: "你是简历生成助手。请在不臆造个人信息的前提下，尽量饱满地填充内容：总结要简洁全面，经验描述采用 3–5 条要点以中文分号分隔，包含动作、方法、数据结果。严格生成符合站点 schema 的 JSON，键名小写，只返回 JSON。"}
+	user := chatMessage{Role: "user", Content: "输入：" + reqBody.Input + "\n要求：" + schema + "\n只返回 JSON，不要任何解释。未知值留空字符串或空数组。"}
+	payload := map[string]any{"model": model, "messages": []chatMessage{sys, user}}
+	b, _ := json.Marshal(payload)
+	httpReq, _ := http.NewRequest("POST", apiURL, bytes.NewReader(b))
+	httpReq.Header.Set("Authorization", "Bearer "+apiKey)
+	httpReq.Header.Set("Content-Type", "application/json")
+	resp, err := http.DefaultClient.Do(httpReq)
+	if err != nil {
+		r := simpleFromInput(reqBody.Input)
+		c.JSON(http.StatusOK, r)
+		return
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		r := simpleFromInput(reqBody.Input)
+		c.JSON(http.StatusOK, r)
+		return
+	}
+	var out struct {
+		Choices []struct {
+			Message chatMessage `json:"message"`
+		} `json:"choices"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {
+		r := simpleFromInput(reqBody.Input)
+		c.JSON(http.StatusOK, r)
+		return
+	}
+	if len(out.Choices) == 0 {
+		r := simpleFromInput(reqBody.Input)
+		c.JSON(http.StatusOK, r)
+		return
+	}
+	var r models.Resume
+	content := out.Choices[0].Message.Content
+	if err := json.Unmarshal([]byte(content), &r); err != nil {
+		i := strings.Index(content, "{")
+		j := strings.LastIndex(content, "}")
+		if i >= 0 && j > i {
+			if err2 := json.Unmarshal([]byte(content[i:j+1]), &r); err2 != nil {
+				r = simpleFromInput(reqBody.Input)
+			}
+		} else {
+			r = simpleFromInput(reqBody.Input)
+		}
+	}
+	if r.Config.Color == "" {
+		r.Config.Color = "#333333"
+	}
+	if r.Config.Template == "" {
+		r.Config.Template = "classic"
+	}
+	c.JSON(http.StatusOK, r)
+}
+
+type reviseReq struct {
+	Instruction string        `json:"instruction"`
+	Resume      models.Resume `json:"resume"`
+}
+
+func ApiAiRevise(c *gin.Context) {
+	if !config.AppConfig.EnableAIAssistant {
+		c.String(http.StatusForbidden, "Disabled")
+		return
+	}
+	apiURL := os.Getenv("DEEPSEEK_API_URL")
+	if apiURL == "" {
+		apiURL = "https://api.deepseek.com/v1/chat/completions"
+	}
+	apiKey := os.Getenv("DEEPSEEK_API_KEY")
+	if apiKey == "" {
+		c.String(http.StatusBadRequest, "Missing API key")
+		return
+	}
+	model := os.Getenv("DEEPSEEK_MODEL")
+	if model == "" {
+		model = "deepseek-chat"
+	}
+
+	var reqBody reviseReq
+	if err := c.ShouldBindJSON(&reqBody); err != nil || strings.TrimSpace(reqBody.Instruction) == "" {
+		c.String(http.StatusBadRequest, "Invalid input")
+		return
+	}
+	schema := `仅输出一个严格的 JSON 对象，键名与结构如下（全部小写）：
+{"name":"","email":"","phone":"","summary":"","avatar":"","config":{"template":"classic","color":"#333333","font":"","font_size":"","paper_size":"a4"},"experience":[{"title":"","company":"","date":"YYYY-MM","description":""}],"education":[{"degree":"","school":"","date":"YYYY-MM"}]}`
+	sys := chatMessage{Role: "system", Content: "你是简历生成助手。根据现有 JSON 简历与用户修改要求，更新并优化简历：保持事实，不臆造；经验描述以 3–5 条要点的中文分号分隔补充动作、方法、数据。严格返回符合站点 schema 的 JSON，键名小写，只返回 JSON。"}
+	oldJSON, _ := json.Marshal(reqBody.Resume)
+	user := chatMessage{Role: "user", Content: "现有简历：" + string(oldJSON) + "\n修改要求：" + reqBody.Instruction + "\n输出：" + schema + "\n只返回 JSON，不要解释。"}
+	payload := map[string]any{"model": model, "messages": []chatMessage{sys, user}}
+	b, _ := json.Marshal(payload)
+	httpReq, _ := http.NewRequest("POST", apiURL, bytes.NewReader(b))
+	httpReq.Header.Set("Authorization", "Bearer "+apiKey)
+	httpReq.Header.Set("Content-Type", "application/json")
+	resp, err := http.DefaultClient.Do(httpReq)
+	if err != nil {
+		r := reqBody.Resume
+		c.JSON(http.StatusOK, r)
+		return
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		r := reqBody.Resume
+		c.JSON(http.StatusOK, r)
+		return
+	}
+	var out struct {
+		Choices []struct {
+			Message chatMessage `json:"message"`
+		} `json:"choices"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {
+		c.JSON(http.StatusOK, reqBody.Resume)
+		return
+	}
+	if len(out.Choices) == 0 {
+		c.JSON(http.StatusOK, reqBody.Resume)
+		return
+	}
+	content := out.Choices[0].Message.Content
+	var r models.Resume
+	if err := json.Unmarshal([]byte(content), &r); err != nil {
+		i := strings.Index(content, "{")
+		j := strings.LastIndex(content, "}")
+		if i >= 0 && j > i {
+			if err2 := json.Unmarshal([]byte(content[i:j+1]), &r); err2 != nil {
+				r = reqBody.Resume
+			}
+		} else {
+			r = reqBody.Resume
+		}
+	}
+	if r.Config.Color == "" {
+		r.Config.Color = "#333333"
+	}
+	if r.Config.Template == "" {
+		r.Config.Template = "classic"
+	}
+	if r.Config.PaperSize == "" {
+		r.Config.PaperSize = "a4"
+	}
+	c.JSON(http.StatusOK, r)
+}
+
+func ApiPreviewJSON(c *gin.Context) {
+	var resume models.Resume
+	if err := c.ShouldBindJSON(&resume); err != nil {
+		c.String(http.StatusBadRequest, "Invalid JSON")
+		return
+	}
+	if resume.Config.Color == "" {
+		resume.Config.Color = "#333333"
+	}
+	if resume.Config.Template == "" {
+		resume.Config.Template = "classic"
+	}
+	c.HTML(http.StatusOK, "resume_content.html", gin.H{"Resume": resume})
 }
 
 func DownloadPDF(c *gin.Context) {
