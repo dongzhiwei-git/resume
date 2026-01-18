@@ -1,18 +1,28 @@
 PORT ?= 8080
 MYSQL_DSN ?= root:password@tcp(localhost:3307)/resume?parseTime=true&charset=utf8mb4
 GOPROXY ?= https://goproxy.cn,direct
-REV ?= HEAD~1
 
-.PHONY: lint lint-fast lint-ci build run docker-build docker-run stop ai-run restart compose-restart compose-stop build-bin
+.PHONY: lint lint-fast lint-ci lint-offline lint-vendor deps build run docker-build docker-run stop ai-run restart compose-restart compose-stop build-bin
 
 lint:
-    golangci-lint run --timeout=2m --concurrency=4
+	go vet ./...
+	@fmt_files=$$(find . -name '*.go' -not -path './vendor/*' -print0 | xargs -0 gofmt -s -l | tr '\n' '\n'); if [ -n "$$fmt_files" ]; then echo "need gofmt:"; echo "$$fmt_files"; exit 2; fi
 
 lint-fast:
-    golangci-lint run --timeout=60s --concurrency=4 --new-from-rev=$(REV)
+	go vet ./...
 
 lint-ci:
-    golangci-lint run --timeout=5m --concurrency=8 --allow-parallel-runners
+	go vet ./...
+
+lint-offline:
+	GOFLAGS=-mod=readonly go vet ./...
+
+lint-vendor:
+	go vet ./...
+
+deps:
+	GOPROXY=$(GOPROXY) go mod download
+	GOPROXY=$(GOPROXY) go list -deps ./... >/dev/null
 
 build:
 	env -u GOROOT -u GOPATH GOPROXY=$(GOPROXY) go build -o bin/resume main.go

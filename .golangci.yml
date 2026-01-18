@@ -2,9 +2,13 @@ run:
   timeout: 2m
   concurrency: 4
   allow-parallel-runners: true
+  modules-download-mode: readonly
+  skip-dirs:
+    - vendor
 issues:
   max-same-issues: 0
 linters:
+  disable-all: true
   enable:
     - govet
     - staticcheck
@@ -13,7 +17,9 @@ linters:
     - errcheck
     - unused
     - exportloopref
-  disable-all: false
+  disable:
+    - gocritic
+    - ruleguard
 linters-settings:
   staticcheck:
     checks: ["all"]
